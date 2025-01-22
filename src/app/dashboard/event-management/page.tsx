@@ -1,11 +1,12 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Calendar, MapPin, Users, Clock, ChevronDown } from "lucide-react"
+import { Calendar, MapPin, Users, Clock, ChevronDown, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
 
 // Static event data
 const events = [
@@ -46,7 +47,21 @@ const events = [
 
 const sports = ["Football", "Cricket", "Badminton", "Basketball", "Tennis", "Table Tennis", "Volleyball", "Hockey"]
 
+const staticMembers = ["Faizan ", "Ahsan" , "Shahrayar", "Alex", "Peter", "Johny"]
+
 export default function EventManagement() {
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+
+  const addMember = (member: string) => {
+    if (member && !selectedMembers.includes(member)) {
+      setSelectedMembers([...selectedMembers, member])
+    }
+  }
+
+  const removeMember = (memberToRemove: string) => {
+    setSelectedMembers(selectedMembers.filter((member) => member !== memberToRemove))
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 p-8">
       <div className="max-w-7xl mx-auto">
@@ -240,6 +255,39 @@ export default function EventManagement() {
                     End Date & Time
                   </Label>
                   <Input id="endDate" type="datetime-local" className="bg-white/5 border-white/10 text-white" />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 space-y-4">
+                <Label htmlFor="inviteMembers" className="text-gray-300">
+                  Invite Members
+                </Label>
+                <Select onValueChange={addMember}>
+                  <SelectTrigger className="bg-white/5 border-white/10 text-gray-300">
+                    <SelectValue placeholder="Select a member" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-300 border-white/10">
+                    {staticMembers
+                      .filter((member) => !selectedMembers.includes(member))
+                      .map((member) => (
+                        <SelectItem key={member} value={member}>
+                          {member}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedMembers.map((member) => (
+                    <div
+                      key={member}
+                      className="flex items-center bg-white/10 rounded-full px-3 py-1 text-sm text-white"
+                    >
+                      {member}
+                      <button className="ml-2 text-gray-400 hover:text-white" onClick={() => removeMember(member)}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 

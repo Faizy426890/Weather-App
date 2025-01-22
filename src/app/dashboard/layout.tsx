@@ -19,7 +19,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-950 via-blue-950 to-slate-900">
       <Sidebar />
       <div className="flex-grow md:ml-64 pt-8 md:pt-0">
         <main className="">{children}</main>

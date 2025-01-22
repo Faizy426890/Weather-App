@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Calendar, UserCog, HeartPulse, GamepadIcon, UserCircle, LogOut, Menu, X } from "lucide-react"
 
 const menuItems = [
@@ -16,6 +16,7 @@ const menuItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -24,8 +25,19 @@ export function Sidebar() {
       }
     }
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
     window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
+    document.addEventListener("mousedown", handleClickOutside)
+
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
   }, [])
 
   const toggleMobileMenu = () => {
@@ -34,6 +46,14 @@ export function Sidebar() {
 
   return (
     <>
+      {/* Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Mobile Navbar */}
       <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-900 bg-opacity-80 backdrop-blur-md">
         <div className="flex items-center justify-between px-4 py-3">
@@ -47,7 +67,8 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 bottom-0 z-40 w-64 bg-gradient-to-b from-black via-blue-950 to-gray-950 border-r border-gray-800 transition-transform duration-300 ease-in-out  transform ${
+        ref={sidebarRef}
+        className={`fixed left-0 top-0 bottom-0 z-40 w-64 bg-gradient-to-b from-black via-blue-950 to-gray-950 border-r border-gray-800 transition-transform duration-300 ease-in-out transform ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >

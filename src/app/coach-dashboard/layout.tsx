@@ -1,25 +1,33 @@
-"use client"
+'use client'
+import { Navbar } from "./components/navbar"
+import { useState , useEffect } from "react"
 
-import { Sidebar } from "./components/sidebar"
-import { motion } from "framer-motion"
 
-export default function CoachLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+}) { 
+     const [isMounted, setIsMounted] = useState(false)
+    
+      useEffect(() => {
+        setIsMounted(true)
+      }, [])
+    
+      if (!isMounted) {
+        return null // or a loading spinner
+      }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 ">
-      <Sidebar />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="ml-64 min-h-screen"
-      >
-        <main className="p-8">{children}</main>
-      </motion.div>
-    </div>
-  )
-}
+    <html lang="en"> 
 
+      <body> 
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 ">
+        <Navbar />
+        <div className="lg:pl-64">
+          <main className="pt-16 lg:p-8">{children}</main>
+        </div> 
+        </div>
+      </body>
+    </html>
+  )
+} 

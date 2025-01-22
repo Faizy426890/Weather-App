@@ -27,11 +27,11 @@ export function UserTypeModal({ isOpen, onClose, onSelect }: UserTypeModalProps)
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-white mb-6 text-center">Choose Login Type</h2>
-            <div className="flex justify-around">
+            <div className="flex justify-between gap-2">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="  flex gap-1 items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-md shadow-lg  transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
+                className="  flex gap-1 items-center justify-center space-x-2 p-2 sm:py-3 sm:px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-md shadow-lg  transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
                 onClick={() => onSelect('user')}
               >
                 <User size={22} className="mb-2" />
@@ -40,7 +40,7 @@ export function UserTypeModal({ isOpen, onClose, onSelect }: UserTypeModalProps)
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex gap-1 items-center bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ease-in-out"
+                className="flex gap-1 items-center  bg-purple-600 hover:bg-purple-700 p-2 text-white font-bold sm:py-3 sm:px-4  rounded-lg transition duration-300 ease-in-out"
                 onClick={() => onSelect('coach')}
               >
                 <UserCog size={22} className="mb-2" />
