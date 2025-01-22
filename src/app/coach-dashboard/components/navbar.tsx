@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Menu } from 'lucide-react'
-import { Sidebar } from './Sidebar'
+import { Sidebar } from './sidebar'
 
 export function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
