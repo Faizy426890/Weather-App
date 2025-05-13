@@ -1,9 +1,11 @@
-import React from 'react'
-import SignUp from '../Components/Sign-up/Signup'
-function page() {
-  return (
-   <SignUp/>
-  )
-}
+"use client";
 
-export default page
+import { SignUp } from "@clerk/nextjs";
+
+export default function SignUpPage() {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <SignUp path="/sign-up" routing="path" />
+    </div>
+  );
+}
