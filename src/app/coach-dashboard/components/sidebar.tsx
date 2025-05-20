@@ -8,7 +8,7 @@ import { Activity, Award, UserCircle, LogOut, X } from "lucide-react"
 
 const menuItems = [
   { icon: Activity, label: "Status", href: "/coach/status" },
-  { icon: Award, label: "Coach Specifications", href: "/coach/specifications" },
+  { icon: Award, label: "Coach Specifications", href: "/coach-dashboard/specifications" },
   { icon: UserCircle, label: "My Profile", href: "/coach/profile" },
 ]
 

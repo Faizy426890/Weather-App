@@ -5,7 +5,8 @@ import { ClerkProvider ,   SignInButton,
   SignedOut,
   UserButton} from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import "./globals.css";
+import "./globals.css"; 
+import { useUser } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}> 
+    <ClerkProvider appearance={{ baseTheme: dark }} > 
         
           <html lang="en"> 
       <body

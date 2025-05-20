@@ -3,7 +3,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge" 
+import { useRouter } from "next/navigation"
 import {
   Cloud,
   CloudLightning,
@@ -66,10 +67,11 @@ function Home() {
     { name: "Features", href: "#features" },
     { name: "How It Works", href: "#how-it-works" },
     { name: "Testimonials", href: "#testimonials" },
-    { name: "Contact", href: "#contact" },
+    { name: "Contact", href: "#contact" }, 
   ]
   const [mounted, setMounted] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false) 
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true)
@@ -107,8 +109,11 @@ function Home() {
               >
                 {item.name}
               </a>
-            ))}
-            <Button className="ml-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            ))} 
+             <Button onClick={()=>{router.push('/sign-in?role=coach')}} className="ml-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-800">
+              Login as Coach
+            </Button>
+            <Button onClick={()=>{router.push('/sign-in?role=user')}} className="ml-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
               Get Started
             </Button>
           </nav>
@@ -143,15 +148,19 @@ function Home() {
                       {item.name === "Features" && <Zap className="h-5 w-5 text-blue-400" />}
                       {item.name === "How It Works" && <Gamepad2 className="h-5 w-5 text-purple-400" />}
                       {item.name === "Testimonials" && <Users className="h-5 w-5 text-blue-400" />}
-                      {item.name === "Contact" && <MailIcon className="h-5 w-5 text-purple-400" />}
+                      {item.name === "Contact" && <MailIcon className="h-5 w-5 text-purple-400" />} 
+
                       {item.name}
                     </a>
                   ))}
                 </nav>
                 <div className="mt-auto border-t border-gray-800 pt-6 pb-4 px-4">
-                  <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                    Get Started
-                  </Button>
+                  <Button onClick={()=>{router.push('/sign-in?role=coach')}} className="ml-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-800">
+              Login as Coach
+            </Button>
+            <Button onClick={()=>{router.push('/sign-in?role=user')}} className="ml-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+              Get Started
+            </Button>
                 </div>
               </div>
             </SheetContent>
@@ -179,10 +188,11 @@ function Home() {
             </p>
             <div className="flex flex-row gap-4">
               <Button
-                size="lg"
+                size="lg" 
+                onClick={()=>{router.push('/sign-in?role=user')}}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
-                Try For Free <ArrowRight className="ml-2 h-5 w-5" />
+                Try for Free <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
 
