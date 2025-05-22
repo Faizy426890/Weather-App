@@ -3,7 +3,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge" 
+import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import {
   Cloud,
@@ -20,8 +20,21 @@ import {
   Menu,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { useUser } from "@clerk/nextjs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { LogOut, User } from "lucide-react" 
+import { useClerk } from "@clerk/nextjs";
 
-// Add the lightning animation keyframes
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
 const globalStyles = `
    @keyframes lightning {
      0%, 95%, 98% {
@@ -67,11 +80,15 @@ function Home() {
     { name: "Features", href: "#features" },
     { name: "How It Works", href: "#how-it-works" },
     { name: "Testimonials", href: "#testimonials" },
-    { name: "Contact", href: "#contact" }, 
+    { name: "Contact", href: "#contact" },
   ]
   const [mounted, setMounted] = useState(false)
-  const [isOpen, setIsOpen] = useState(false) 
-  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter() 
+    const { signOut } = useClerk();
+  const { isSignedIn, user } = useUser()
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -85,6 +102,18 @@ function Home() {
       document.head.removeChild(styleElement)
     }
   }, [])
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true)
+      await signOut()
+      // Modal will automatically close after sign-out
+    } catch (error) {
+      console.error("Error signing out:", error)
+      setIsSigningOut(false)
+    }
+  }
+
   if (!mounted) return null
 
   return (
@@ -109,13 +138,65 @@ function Home() {
               >
                 {item.name}
               </a>
-            ))} 
-             <Button onClick={()=>{router.push('/sign-in?role=coach')}} className="ml-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-800">
-              Login as Coach
-            </Button>
-            <Button onClick={()=>{router.push('/sign-in?role=user')}} className="ml-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-              Get Started
-            </Button>
+            ))}
+            {isSignedIn ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full ring-2 ring-purple-500/50 p-0 hover:bg-gray-800/50"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.fullName || "User"} />
+                      <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+                        {user?.firstName?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 bg-gray-900 border-gray-800 text-white p-3">
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-800">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.fullName || "User"} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+                          {user?.firstName?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-white">{user?.fullName || "User"}</p>
+                        <p className="text-xs text-gray-400">{user?.emailAddresses[0]?.emailAddress || ""}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
+                      onClick={() => router.push("/dashboard/user-profile")}
+                    >
+                      <User className="h-4 w-4 text-purple-400" />
+                      Dashboard
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
+                      onClick={() => setShowSignOutModal(true)}
+                    >
+                      <LogOut className="h-4 w-4 text-purple-400" />
+                      Sign out
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Button
+                onClick={() => {
+                  router.push("/sign-in")
+                }}
+                className="ml-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                Get Started
+              </Button>
+            )}
           </nav>
 
           {/* Mobile navigation */}
@@ -127,9 +208,7 @@ function Home() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[350px] bg-gray-900 border-gray-800">
-              <SheetTitle className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent px-4 py-2">
-                
-              </SheetTitle>
+              <SheetTitle className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent px-4 py-2"></SheetTitle>
               <div className="flex flex-col h-full">
                 <div className="flex items-center gap-2 py-4 border-b border-gray-800">
                   <Cloud className="h-6 w-6 text-purple-400" />
@@ -148,19 +227,54 @@ function Home() {
                       {item.name === "Features" && <Zap className="h-5 w-5 text-blue-400" />}
                       {item.name === "How It Works" && <Gamepad2 className="h-5 w-5 text-purple-400" />}
                       {item.name === "Testimonials" && <Users className="h-5 w-5 text-blue-400" />}
-                      {item.name === "Contact" && <MailIcon className="h-5 w-5 text-purple-400" />} 
+                      {item.name === "Contact" && <MailIcon className="h-5 w-5 text-purple-400" />}
 
                       {item.name}
                     </a>
                   ))}
                 </nav>
                 <div className="mt-auto border-t border-gray-800 pt-6 pb-4 px-4">
-                  <Button onClick={()=>{router.push('/sign-in?role=coach')}} className="ml-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-800">
-              Login as Coach
-            </Button>
-            <Button onClick={()=>{router.push('/sign-in?role=user')}} className="ml-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-              Get Started
-            </Button>
+                  {isSignedIn ? (
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="h-12 w-12 ring-2 ring-purple-500/50">
+                        <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.fullName || "User"} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+                          {user?.firstName?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium text-white">{user?.fullName || "User"}</p>
+                        <p className="text-xs text-gray-400">{user?.emailAddresses[0]?.emailAddress || ""}</p>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs text-white border-gray-700 hover:bg-gray-800 "
+                            onClick={() => router.push("/dashboard/user-profile")}
+                          >
+                            Dashboard
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs text-white border-gray-700 hover:bg-gray-800 hover:text-gray-200"
+                            onClick={() => setShowSignOutModal(true)}
+                          >
+                            Sign out
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        router.push("/sign-in")
+                      }}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                    >
+                      Get Started
+                    </Button>
+                  )}
                 </div>
               </div>
             </SheetContent>
@@ -188,8 +302,10 @@ function Home() {
             </p>
             <div className="flex flex-row gap-4">
               <Button
-                size="lg" 
-                onClick={()=>{router.push('/sign-in?role=user')}}
+                size="lg"
+                onClick={() => {
+                  isSignedIn ? router.push("/dashboard/user-profile") : router.push("/sign-in")
+                }}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
                 Try for Free <ArrowRight className="ml-2 h-5 w-5" />
@@ -361,6 +477,9 @@ function Home() {
             <div className="mt-16 text-center">
               <Button
                 size="lg"
+                onClick={() => {
+                  isSignedIn ? router.push("/dashboard/user-profile") : router.push("/sign-in")
+                }}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
                 Start Your Weather Gaming Journey
@@ -624,6 +743,9 @@ function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   size="lg"
+                  onClick={() => {
+                    isSignedIn ? router.push("/dashboard/user-profile") : router.push("/sign-in")
+                  }}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
                   Start Free Trial <Zap className="ml-2 h-5 w-5" />
@@ -631,7 +753,7 @@ function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-gray-700 text-white hover:text-white hover:bg-gray-800"
+                  className="border-gray-700 text-black hover:text-white hover:bg-gray-800"
                 >
                   Learn More <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -777,6 +899,54 @@ function Home() {
         </section>
       </main>
 
+      {/* Sign Out Modal */}
+      <Dialog open={showSignOutModal} onOpenChange={setShowSignOutModal}>
+        <DialogContent className="bg-black border border-gray-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+              <LogOut className="h-5 w-5 text-white" />
+              Sign Out
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to sign out of your account?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            <div className="h-20 w-20 rounded-full bg-black flex items-center justify-center border border-gray-800">
+              <Avatar className="h-16 w-16 ring-2 ring-white/20">
+                <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.fullName || "User"} />
+                <AvatarFallback className="bg-gradient-to-br from-gray-800 to-gray-900 text-white">
+                  {user?.firstName?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto border-gray-800 text-black hover:bg-gray-900 hover:text-white"
+              onClick={() => setShowSignOutModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full sm:w-auto bg-white text-black hover:bg-gray-200"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent"></span>
+                  Signing Out...
+                </>
+              ) : (
+                "Yes, Sign Out"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Footer */}
       <footer className="bg-black/60 backdrop-blur-sm border-t border-gray-800 py-12">
         <div className="container mx-auto px-4">
@@ -892,7 +1062,7 @@ function Home() {
   )
 }
 
-function MailIcon(props : any) {
+function MailIcon(props: any) {
   return (
     <svg
       {...props}
@@ -912,7 +1082,7 @@ function MailIcon(props : any) {
   )
 }
 
-function MapPinIcon(props : any) {
+function MapPinIcon(props: any) {
   return (
     <svg
       {...props}
@@ -932,7 +1102,7 @@ function MapPinIcon(props : any) {
   )
 }
 
-function PhoneIcon(props : any) {
+function PhoneIcon(props: any) {
   return (
     <svg
       {...props}
@@ -951,7 +1121,7 @@ function PhoneIcon(props : any) {
   )
 }
 
-function SendIcon(props : any) {
+function SendIcon(props: any) {
   return (
     <svg
       {...props}
@@ -971,7 +1141,7 @@ function SendIcon(props : any) {
   )
 }
 
-function FacebookIcon(props : any) {
+function FacebookIcon(props: any) {
   return (
     <svg
       {...props}
@@ -990,7 +1160,7 @@ function FacebookIcon(props : any) {
   )
 }
 
-function InstagramIcon(props : any) {
+function InstagramIcon(props: any) {
   return (
     <svg
       {...props}
@@ -1011,7 +1181,7 @@ function InstagramIcon(props : any) {
   )
 }
 
-function LinkedinIcon(props : any) {
+function LinkedinIcon(props: any) {
   return (
     <svg
       {...props}
@@ -1032,7 +1202,7 @@ function LinkedinIcon(props : any) {
   )
 }
 
-function TwitterIcon(props : any) {
+function TwitterIcon(props: any) {
   return (
     <svg
       {...props}

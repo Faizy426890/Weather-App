@@ -1,22 +1,77 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Calendar, UserCog, HeartPulse, GamepadIcon, UserCircle, LogOut, Menu, X } from "lucide-react"
-
-const menuItems = [
-  { icon: Calendar, label: "Event Management", href: "/dashboard/event-management" },
-  { icon: UserCog, label: "Coach Hiring", href: "/dashboard/coaches" },
-  { icon: HeartPulse, label: "Health Record", href: "/dashboard/health-record" },
-  { icon: GamepadIcon, label: "Game Suggestion", href: "/dashboard/game-suggestions" },
-  { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" },
-]
+import { useClerk, useUser } from "@clerk/nextjs"
+import { Calendar, UserCog, HeartPulse, GamepadIcon, UserCircle, LogOut, Menu, X, Lock, Briefcase } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function Sidebar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const { signOut } = useClerk()
+  const { user } = useUser()
+
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
+  const [isCoach, setIsCoach] = useState(false)
+
+  useEffect(() => {
+    if (user?.publicMetadata?.isCoach === true) {
+      setIsCoach(true)
+    } else {
+      setIsCoach(false)
+    }
+  }, [user])
+
+  const menuItems = [
+    { icon: Calendar, label: "Event Management", href: "/dashboard/event-management" },
+    { icon: UserCog, label: "Coach Hiring", href: "/dashboard/coaches" },
+    { icon: HeartPulse, label: "Health Record", href: "/dashboard/health-record" },
+    { icon: GamepadIcon, label: "Game Suggestion", href: "/dashboard/game-suggestions" },
+    { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" },
+    {
+      icon: UserCog,
+      label: "Register as a Coach",
+      href: "/dashboard/coach-registeration",
+      disabled: isCoach,
+      tooltip: isCoach ? "You are already registered as a coach" : null,
+    },
+    {
+      icon: Briefcase,
+      label: "Coach Portal",
+      href: "/dashboard/coach-dashboard",
+      disabled: !isCoach,
+      tooltip: !isCoach ? "Register as a coach to access this feature" : null,
+    },
+  ]
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true)
+
+      await signOut()
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      router.push("/")
+    } catch (error) {
+      console.error("Error signing out:", error)
+      setIsSigningOut(false)
+    }
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -42,6 +97,48 @@ export function Sidebar() {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const renderMenuItem = (item: any) => {
+    const isActive = pathname === item.href
+
+    if (item.disabled) {
+      return (
+        <TooltipProvider key={item.label}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-not-allowed opacity-50 bg-transparent text-gray-500`}
+              >
+                <item.icon className="w-5 h-5 text-gray-500" />
+                <span className="font-medium">{item.label}</span>
+                <Lock className="w-4 h-4 ml-auto text-gray-500" />
+              </div>
+            </TooltipTrigger>
+            {item.tooltip && (
+              <TooltipContent side="right">
+                <p>{item.tooltip}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      )
+    }
+
+    return (
+      <li key={item.label}>
+        <Link
+          href={item.href}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+            isActive ? "bg-blue-500 text-white" : "text-gray-300 hover:bg-white/10"
+          }`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-gray-400"}`} />
+          <span className="font-medium">{item.label}</span>
+        </Link>
+      </li>
+    )
   }
 
   return (
@@ -80,31 +177,13 @@ export function Sidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 px-4">
-            <ul className="space-y-2">
-              {menuItems.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                        isActive ? "bg-blue-500 text-white" : "text-gray-300 hover:bg-white/10"
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-gray-400"}`} />
-                      <span className="font-medium">{item.label}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
+            <ul className="space-y-2">{menuItems.map(renderMenuItem)}</ul>
           </nav>
 
           {/* Sign Out Button */}
           <div className="p-4 mt-auto">
             <button
-              onClick={() => console.log("Sign Out")}
+              onClick={() => setShowSignOutModal(true)}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:text-white hover:bg-red-500 transition-colors"
             >
               <LogOut className="w-5 h-5" />
@@ -113,7 +192,44 @@ export function Sidebar() {
           </div>
         </div>
       </div>
+
+      {/* Sign Out Modal */}
+      <Dialog open={showSignOutModal} onOpenChange={setShowSignOutModal}>
+        <DialogContent className="bg-black border border-gray-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+              <LogOut className="h-5 w-5 text-white" />
+              Sign Out
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to sign out of your account?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto border-gray-800 text-black hover:bg-gray-900 hover:text-white"
+              onClick={() => setShowSignOutModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full sm:w-auto bg-white text-black hover:bg-gray-200"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent"></span>
+                  Signing Out...
+                </>
+              ) : (
+                "Yes, Sign Out"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
-

@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Activity, Award, UserCircle, LogOut, X } from "lucide-react"
 
 const menuItems = [
-  { icon: Activity, label: "Status", href: "/coach/status" },
-  { icon: Award, label: "Coach Specifications", href: "/coach-dashboard/specifications" },
-  { icon: UserCircle, label: "My Profile", href: "/coach/profile" },
+  { icon: Activity, label: "Status", href: "/dashboard/coach/status" },
+  { icon: Award, label: "Dashboard", href: "/dashboard/coach-dashboard" },
+  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach/profile" },
 ]
 
 interface SidebarProps {
