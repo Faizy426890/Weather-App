@@ -380,7 +380,7 @@ export default function UserProfile() {
               <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-gray-400">
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-1" />
-                  Joined {new Date(user.createdAt).toLocaleDateString()}
+Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                 </div>
               </div>
             </div>
