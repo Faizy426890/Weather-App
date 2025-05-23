@@ -91,7 +91,7 @@ export default function UserProfile() {
 
     setIsSubmitting(true)
    try {
-  const response = await axios.post(`${process.env.NEXT_PUBLIC_WEATHER_URL}{/api/update-profile`, {
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_WEATHER_URL}/api/update-profile`, {
     clerkId: user.id,
     bio: editingBio ? newBio : bio,
     achievements,
