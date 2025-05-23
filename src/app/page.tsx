@@ -170,7 +170,7 @@ function Home() {
                     </div>
                     <Button
                       variant="ghost"
-                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
+                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-black"
                       onClick={() => router.push("/dashboard/user-profile")}
                     >
                       <User className="h-4 w-4 text-purple-400" />
@@ -178,7 +178,7 @@ function Home() {
                     </Button>
                     <Button
                       variant="ghost"
-                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
+                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-black"
                       onClick={() => setShowSignOutModal(true)}
                     >
                       <LogOut className="h-4 w-4 text-purple-400" />
