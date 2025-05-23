@@ -105,8 +105,7 @@ export default function UserProfile() {
   }
   setHasChanges(false);
 } catch (error) {
-  const errorMessage =
-    error.response?.data?.message || "Failed to update profile";
+  const errorMessage = "Failed to update profile";
   toast.error(errorMessage);
 } finally {
       setIsSubmitting(false)
