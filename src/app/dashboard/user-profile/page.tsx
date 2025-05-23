@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Award, Calendar, PlusCircle, Save, X } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { Input } from "@/components/ui/input" 
+import axios from "axios";
 import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
 import { ToastContainer, toast } from "react-toastify"
@@ -89,35 +90,25 @@ export default function UserProfile() {
     if (!user) return
 
     setIsSubmitting(true)
-    try {
-      const response = await fetch("/api/update-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          clerkId: user.id,
-          bio: editingBio ? newBio : bio,
-          achievements: achievements,
-        }),
-      })
+   try {
+  const response = await axios.post("/api/update-profile", {
+    clerkId: user.id,
+    bio: editingBio ? newBio : bio,
+    achievements,
+  });
 
-      const data = await response.json()
+  toast.success(response.data.message || "Profile updated successfully");
 
-      if (response.ok) {
-        toast.success(data.message)
-        if (editingBio) {
-          setBio(newBio)
-          setEditingBio(false)
-        }
-        setHasChanges(false)
-      } else {
-        toast.error(data.message || "Failed to update profile")
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error)
-      toast.error("An error occurred while saving changes")
-    } finally {
+  if (editingBio) {
+    setBio(newBio);
+    setEditingBio(false);
+  }
+  setHasChanges(false);
+} catch (error) {
+  const errorMessage =
+    error.response?.data?.message || "Failed to update profile";
+  toast.error(errorMessage);
+} finally {
       setIsSubmitting(false)
     }
   }
