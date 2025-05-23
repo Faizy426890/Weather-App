@@ -83,7 +83,8 @@ function Home() {
     { name: "Contact", href: "#contact" },
   ]
   const [mounted, setMounted] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false) 
+    const [sheetOpen, setSheetOpen] = useState(false)
   const router = useRouter() 
     const { signOut } = useClerk();
   const { isSignedIn, user } = useUser()
@@ -200,7 +201,7 @@ function Home() {
           </nav>
 
           {/* Mobile navigation */}
-          <Sheet>
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon" className="text-white">
                 <Menu className="h-6 w-6" />
@@ -218,11 +219,12 @@ function Home() {
                 </div>
                 <nav className="flex flex-col gap-1 py-6">
                   {navItems.map((item) => (
-                    <a
-                      key={item.name}
-                      href={item.href}
-                      className="flex items-center gap-2 px-4 py-3 text-white hover:bg-gray-800 rounded-md transition-colors"
-                    >
+                  <a
+                key={item.name}
+                href={item.href}
+                onClick={() => setSheetOpen(false)}
+                className="flex items-center gap-2 px-4 py-3 text-white hover:bg-gray-800 rounded-md transition-colors"
+              >
                       {item.name === "Home" && <Cloud className="h-5 w-5 text-purple-400" />}
                       {item.name === "Features" && <Zap className="h-5 w-5 text-blue-400" />}
                       {item.name === "How It Works" && <Gamepad2 className="h-5 w-5 text-purple-400" />}
