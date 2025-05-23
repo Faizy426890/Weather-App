@@ -9,7 +9,9 @@ import { Activity, Award, UserCircle, LogOut, X } from "lucide-react"
 const menuItems = [
   { icon: Activity, label: "Status", href: "/dashboard/coach/status" },
   { icon: Award, label: "Dashboard", href: "/dashboard/coach-dashboard" },
-  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach/profile" },
+  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach/profile" }, 
+    { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" },
+
 ]
 
 interface SidebarProps {
