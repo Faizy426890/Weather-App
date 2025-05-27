@@ -20,6 +20,41 @@ interface SearchUser {
   achievements: Achievement[]
 }
 
+interface FriendRequest {
+  clerkId: string
+  email: string
+  firstName: string
+  lastName: string
+  profileImageUrl: string
+  bio: string
+}
+
+interface Friend {
+  clerkId: string
+  email: string
+  firstName: string
+  lastName: string
+  profileImageUrl: string
+  role: string
+  isCoach: string
+  bio: string
+  achievments: any
+}
+
+interface UserInfo {
+  friendRequests: FriendRequest[]
+  friends: Friend[]
+}
+
+interface SearchUser {
+  clerkId: string
+  email: string
+  firstName: string
+  lastName: string
+  profileImageUrl: string
+  bio: string
+}
+
 interface SearchResultsProps {
   searchResults: SearchUser[]
   isSearching: boolean
@@ -28,24 +63,13 @@ interface SearchResultsProps {
   hasRequestBeenSent: (clerkId: string) => boolean
   sendFriendRequest: (clerkId: string) => void
   cancelFriendRequest: (clerkId: string) => void
-  userInfo?: any
-    friends: Array<{
-      clerkId: string
-      email: string
-      firstName: string
-      lastName: string
-      profileImageUrl: string
-      role: string
-      isCoach: string
-      bio: string
-      achievments: any
-    }>
-  
+  userInfo?: UserInfo | null
   acceptingRequest?: string | null
   deletingRequest?: string | null
   acceptFriendRequest?: (clerkId: string) => void
   deleteFriendRequest?: (clerkId: string) => void
 }
+
 
 const SearchResults: React.FC<SearchResultsProps> = ({
   searchResults,
@@ -61,13 +85,14 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   acceptFriendRequest,
   deleteFriendRequest,
 }) => {
+  // Helper function to check if a user has sent me a friend request
   const hasSentMeRequest = (clerkId: string) => {
-    return userInfo?.friendRequests?.some((request : any) => request.clerkId === clerkId) || false
+    return userInfo?.friendRequests?.some((request) => request.clerkId === clerkId) || false
   }
 
   // Helper function to check if a user is already my friend
   const isAlreadyFriend = (clerkId: string) => {
-    return userInfo?.friends?.some((friend : any) => friend.clerkId === clerkId) || false
+    return userInfo?.friends?.some((friend) => friend.clerkId === clerkId) || false
   }
 
   if (isSearching) {
