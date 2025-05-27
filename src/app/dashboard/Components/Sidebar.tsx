@@ -36,12 +36,15 @@ export function Sidebar() {
     }
   }, [user])
 
-  const menuItems = [
-    { icon: Calendar, label: "Event Management", href: "/dashboard/event-management" },
+  const menuItems = [ 
+    { icon: Calendar, label: "Home", href: "/dashboard" },
+    { icon: Calendar, label: "Manage Tournaments", href: "/dashboard/event-management" },
     { icon: UserCog, label: "Coach Hiring", href: "/dashboard/coaches" },
-    { icon: HeartPulse, label: "Health Record", href: "/dashboard/health-record" },
+    // { icon: HeartPulse, label: "Health Record", href: "/dashboard/health-record" },
     { icon: GamepadIcon, label: "Game Suggestion", href: "/dashboard/game-suggestions" },
-    { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" },
+    { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" }, 
+    { icon: UserCircle, label: "Find Friends?", href: "/dashboard/find-friends" },
+
     {
       icon: UserCog,
       label: "Register as a Coach",

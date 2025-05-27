@@ -95,7 +95,8 @@ export default function UserProfile() {
     clerkId: user.id,
     bio: editingBio ? newBio : bio,
     achievements,
-  });
+  }); 
+  console.log(response);
 
   toast.success(response.data.message || "Profile updated successfully");
 
