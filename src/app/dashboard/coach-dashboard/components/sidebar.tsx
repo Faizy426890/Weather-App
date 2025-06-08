@@ -7,10 +7,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Activity, Award, UserCircle, LogOut, X } from "lucide-react"
 
 const menuItems = [
-  { icon: Activity, label: "Status", href: "/dashboard/coach/status" },
+  { icon: Activity, label: "Sessions", href: "/dashboard/coach-dashboard/sessions" },
   { icon: Award, label: "Dashboard", href: "/dashboard/coach-dashboard" },
-  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach/profile" }, 
-    { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" },
+  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach-dashboard/profile" }, 
 
 ]
 

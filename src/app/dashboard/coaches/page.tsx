@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Clock, Award, Code, Globe } from "lucide-react"
+import { Clock, Award, Code, Globe, Users, Calendar, CheckCircle, XCircle, AlertCircle, Sparkles, Plus } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import BookingModal from "./booking-modal"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import { useUser } from "@clerk/nextjs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 interface CoachDetails {
   _id: string
   yearsOfExperience: number
@@ -52,11 +55,47 @@ interface CoachesResponse {
   coaches: Coach[]
 }
 
+interface Session {
+  _id: string
+  sessionName: string
+  sessionCoach: {
+    _id: string
+    clerkId: string
+    email: string
+    firstName: string
+    lastName: string
+    profileImageUrl: string
+    bio: string
+    isCoach: string
+    role: string
+    // ... other coach properties
+  }
+  students: string[]
+  sessionStartTime: string
+  sessionEndTime: string
+  totalParticipants: number
+  accepted: boolean
+  rejected: boolean
+  createdAt: string
+  updatedAt: string
+  __v: number
+}
+
+interface UserSessionsData {
+  createdSessions: Session[]
+  pastSessions: Session[]
+  ongoingSessions: Session[]
+  upcomingSessions: Session[]
+}
+
 export default function CoachesPage() {
   const [coaches, setCoaches] = useState<Coach[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const { user } = useUser()
+  const [userSessionsData, setUserSessionsData] = useState<UserSessionsData | null>(null)
+  const [userSessionsLoading, setUserSessionsLoading] = useState(true)
 
   useEffect(() => {
     const fetchCoaches = async () => {
@@ -79,9 +118,161 @@ export default function CoachesPage() {
     fetchCoaches()
   }, [toast])
 
+  useEffect(() => {
+    const fetchUserSessions = async () => {
+      if (!user?.id) return
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_WEATHER_URL}/api/sessions/user?clerkId=${user.id}`)
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user sessions")
+        }
+
+        const data = await response.json()
+        setUserSessionsData(data)
+      } catch (err) {
+        toast.error("Failed to load user sessions")
+      } finally {
+        setUserSessionsLoading(false)
+      }
+    }
+
+    fetchUserSessions()
+  }, [user?.id])
+
   const handleBookSession = (coach: Coach) => {
     setSelectedCoach(coach)
     setIsModalOpen(true)
+  }
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return {
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    }
+  }
+
+  const getSessionDuration = (start: string, end: string) => {
+    const startTime = new Date(start)
+    const endTime = new Date(end)
+    const diffMs = endTime.getTime() - startTime.getTime()
+    const diffMins = Math.round(diffMs / (1000 * 60))
+    return `${diffMins} min`
+  }
+
+  const renderUserStatusBadge = (session: Session) => {
+    if (session.accepted) {
+      return (
+        <Badge className="bg-green-600 text-white px-3 py-1">
+          <CheckCircle className="w-4 h-4 mr-1" />
+          Accepted
+        </Badge>
+      )
+    } else if (session.rejected) {
+      return (
+        <Badge className="bg-red-600 text-white px-3 py-1">
+          <XCircle className="w-4 h-4 mr-1" />
+          Rejected
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge className="bg-yellow-600 text-white px-3 py-1">
+          <AlertCircle className="w-4 h-4 mr-1" />
+          Pending
+        </Badge>
+      )
+    }
+  }
+
+  const renderUserSessionCard = (session: Session) => {
+    const startDateTime = formatDateTime(session.sessionStartTime)
+    const endDateTime = formatDateTime(session.sessionEndTime)
+    const duration = getSessionDuration(session.sessionStartTime, session.sessionEndTime)
+    const now = new Date()
+    const sessionStart = new Date(session.sessionStartTime)
+    const sessionEnd = new Date(session.sessionEndTime)
+
+    let statusBadge = renderUserStatusBadge(session)
+
+    if (sessionStart <= now && now <= sessionEnd && session.accepted) {
+      statusBadge = (
+        <Badge className="bg-green-600 text-white px-3 py-1">
+          <Sparkles className="w-4 h-4 mr-1" />
+          Active
+        </Badge>
+      )
+    }
+
+    if (sessionEnd < now && !session.accepted && !session.rejected) {
+      statusBadge = (
+        <Badge className="bg-gray-600 text-white px-3 py-1">
+          <AlertCircle className="w-4 h-4 mr-1" />
+          Expired
+        </Badge>
+      )
+    }
+
+    return (
+      <Card key={session._id} className="bg-gray-800/50 border-gray-700">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-3">{session.sessionName}</h3>
+              
+              {/* Coach Information */}
+              <div className="flex items-center gap-3 mb-3 p-3 bg-gray-700/30 rounded-lg">
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img
+                    src={session.sessionCoach.profileImageUrl || "/placeholder.svg?height=40&width=40"}
+                    alt={`${session.sessionCoach.firstName} ${session.sessionCoach.lastName}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-white font-medium">
+                    {session.sessionCoach.firstName} {session.sessionCoach.lastName}
+                  </p>
+                  <p className="text-gray-400 text-sm">{session.sessionCoach.email}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {startDateTime.date}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {startDateTime.time} - {endDateTime.time}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {session.totalParticipants} participant{session.totalParticipants !== 1 ? "s" : ""}
+                </div>
+              </div>
+            </div>
+            {statusBadge}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Badge className="bg-blue-600 text-white px-3 py-1">
+              <Clock className="w-4 h-4 mr-1" />
+              {duration}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -198,10 +389,145 @@ export default function CoachesPage() {
             ))}
       </div>
 
+      {/* My Sessions Section */}
+      <div className="mt-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-white mb-8">
+          <h2 className="text-3xl font-bold mb-2">My Sessions</h2>
+          <p className="text-gray-300">Manage your created and invited sessions</p>
+        </motion.div>
+
+        {userSessionsLoading ? (
+          <div className="grid gap-8">
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <div className="h-7 bg-gray-700 rounded w-48 animate-pulse"></div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="h-20 bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-20 bg-gray-700 rounded animate-pulse"></div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Tabs defaultValue="created" className="mb-8">
+            <TabsList className="bg-gray-800/50 border-gray-700">
+              <TabsTrigger value="created" className="data-[state=active]:bg-blue-600">
+                My Sessions
+              </TabsTrigger>
+              <TabsTrigger value="invited" className="data-[state=active]:bg-blue-600">
+                Invited Sessions
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="created" className="mt-6">
+              
+
+              <div className="space-y-4">
+                {userSessionsData?.createdSessions && userSessionsData.createdSessions.length > 0 ? (
+                  userSessionsData.createdSessions.map((session) => renderUserSessionCard(session))
+                ) : (
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardContent className="p-8 text-center">
+                      <p className="text-gray-400">You haven't created any sessions yet.</p>
+                      <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Your First Session
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="invited" className="mt-6">
+              <div className="grid gap-8">
+                {/* Ongoing Invited Sessions */}
+                <section>
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-xl text-white flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        Ongoing Sessions
+                        <Badge className="bg-green-600 text-white px-2 py-1 text-sm">
+                          {userSessionsData?.ongoingSessions.length || 0}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userSessionsData?.ongoingSessions.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">No ongoing sessions at the moment</div>
+                      ) : (
+                        userSessionsData?.ongoingSessions.map((session) => renderUserSessionCard(session))
+                      )}
+                    </CardContent>
+                  </Card>
+                </section>
+
+                {/* Upcoming Invited Sessions */}
+                <section>
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-xl text-white flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-blue-400" />
+                        Upcoming Sessions
+                        <Badge className="bg-blue-600 text-white px-2 py-1 text-sm">
+                          {userSessionsData?.upcomingSessions.length || 0}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userSessionsData?.upcomingSessions.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">No upcoming sessions scheduled</div>
+                      ) : (
+                        userSessionsData?.upcomingSessions.map((session) => renderUserSessionCard(session))
+                      )}
+                    </CardContent>
+                  </Card>
+                </section>
+
+                {/* Past Invited Sessions */}
+                <section>
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-xl text-white flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-gray-400" />
+                        Past Sessions
+                        <Badge className="bg-gray-600 text-white px-2 py-1 text-sm">
+                          {userSessionsData?.pastSessions.length || 0}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userSessionsData?.pastSessions.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">No past sessions found</div>
+                      ) : (
+                        userSessionsData?.pastSessions.map((session) => renderUserSessionCard(session))
+                      )}
+                    </CardContent>
+                  </Card>
+                </section>
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
+      </div>
+
       {/* Booking Modal */}
       {selectedCoach && (
         <BookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} coach={selectedCoach} />
       )}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   )
 }

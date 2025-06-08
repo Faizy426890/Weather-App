@@ -1,21 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { CalendarIcon, Clock, Users, Sparkles } from "lucide-react"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns"
+import { CalendarIcon, Clock, Users, Sparkles, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { useUser } from "@clerk/nextjs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { toast } from "react-toastify" 
-
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { ToastContainer, toast } from "react-toastify"
 
 interface Friend {
   _id: string
@@ -44,17 +43,35 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ isOpen, onClose, coach }: BookingModalProps) {
+  const { user } = useUser()
   const [sessionName, setSessionName] = useState("Evening Meditation")
-  const [date, setDate] = useState<Date>(new Date())
+  const [date, setDate] = useState<Date>(() => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow
+  })
+  const [currentMonth, setCurrentMonth] = useState<Date>(date)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const [startTime, setStartTime] = useState<string>("16:00")
   const [endTime, setEndTime] = useState<string>("17:00")
   const [availableFriends, setAvailableFriends] = useState<Friend[]>([])
   const [selectedFriends, setSelectedFriends] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isFetchingFriends, setIsFetchingFriends] = useState(false)
+  const [timeError, setTimeError] = useState("")
 
-  // Generate time options for select
-  const generateTimeOptions = () => {
+  // Generate days for the current month view
+  const days = useMemo(() => {
+    const start = startOfMonth(currentMonth)
+    const end = endOfMonth(currentMonth)
+    return eachDayOfInterval({ start, end })
+  }, [currentMonth])
+
+  // Day names for the calendar header
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+  // Optimized time options generation - only generate once
+  const timeOptions = useMemo(() => {
     const options = []
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
@@ -64,35 +81,80 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
       }
     }
     return options
+  }, [])
+
+  // Validate time selection
+  const validateTimes = useCallback((start: string, end: string) => {
+    if (!start || !end) {
+      setTimeError("")
+      return true
+    }
+
+    const startMinutes = Number.parseInt(start.split(":")[0]) * 60 + Number.parseInt(start.split(":")[1])
+    const endMinutes = Number.parseInt(end.split(":")[0]) * 60 + Number.parseInt(end.split(":")[1])
+
+    if (endMinutes <= startMinutes) {
+      setTimeError("End time must be after start time")
+      return false
+    }
+
+    if (endMinutes - startMinutes < 30) {
+      setTimeError("Session must be at least 30 minutes long")
+      return false
+    }
+
+    setTimeError("")
+    return true
+  }, [])
+
+  // Navigate to previous month
+  const previousMonth = () => {
+    setCurrentMonth((prev) => subMonths(prev, 1))
   }
 
-  const timeOptions = generateTimeOptions()
+  // Navigate to next month
+  const nextMonth = () => {
+    setCurrentMonth((prev) => addMonths(prev, 1))
+  }
 
-  // Fetch available friends when start and end time are set
+  // Handle date selection
+  const handleSelectDate = (day: Date) => {
+    // Don't allow selecting dates in the past
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (day < today) {
+      return
+    }
+
+    setDate(day)
+    setCalendarOpen(false)
+  }
+
+  // Debounced friends fetching with Clerk user integration
   useEffect(() => {
-    const fetchAvailableFriends = async () => {
-      if (!startTime || !endTime) return
+    if (!isOpen || !startTime || !endTime || !validateTimes(startTime, endTime) || !user?.id) {
+      setAvailableFriends([])
+      return
+    }
 
-      const startDateTime = new Date(date)
-      const [startHours, startMinutes] = startTime.split(":").map(Number)
-      startDateTime.setHours(startHours, startMinutes, 0, 0)
-
-      const endDateTime = new Date(date)
-      const [endHours, endMinutes] = endTime.split(":").map(Number)
-      endDateTime.setHours(endHours, endMinutes, 0, 0)
-
-      // Don't fetch if end time is before or equal to start time
-      if (endDateTime <= startDateTime) return
-
+    const timer = setTimeout(async () => {
       setIsFetchingFriends(true)
+
       try {
-        // Assuming we have a clerk user ID from the client
-        const userId = "user_2y8hTtztUmImsUclU3hPNt8mzFY"
+        const startDateTime = new Date(date)
+        const [startHours, startMinutes] = startTime.split(":").map(Number)
+        startDateTime.setHours(startHours, startMinutes, 0, 0)
+
+        const endDateTime = new Date(date)
+        const [endHours, endMinutes] = endTime.split(":").map(Number)
+        endDateTime.setHours(endHours, endMinutes, 0, 0)
+
         const startTimeISO = startDateTime.toISOString()
         const endTimeISO = endDateTime.toISOString()
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_WEATHER_URL}/api/get/availableFriends?userId=${userId}&startTime=${startTimeISO}&endTime=${endTimeISO}`,
+          `${process.env.NEXT_PUBLIC_WEATHER_URL}/api/get/availableFriendsForSession?userId=${user.id}&startTime=${startTimeISO}&endTime=${endTimeISO}`,
         )
 
         if (!response.ok) {
@@ -107,14 +169,26 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
       } finally {
         setIsFetchingFriends(false)
       }
-    }
+    }, 500) // Debounce API calls
 
-    if (isOpen) {
-      fetchAvailableFriends()
-    }
-  }, [date, startTime, endTime, isOpen])
+    return () => clearTimeout(timer)
+  }, [date, startTime, endTime, isOpen, validateTimes, user?.id])
+
+  const handleStartTimeChange = (newStartTime: string) => {
+    setStartTime(newStartTime)
+    validateTimes(newStartTime, endTime)
+  }
+
+  const handleEndTimeChange = (newEndTime: string) => {
+    setEndTime(newEndTime)
+    validateTimes(startTime, newEndTime)
+  }
 
   const handleCreateSession = async () => {
+    if (!validateTimes(startTime, endTime) || !user?.id) {
+      return
+    }
+
     setIsLoading(true)
 
     const startDateTime = new Date(date)
@@ -126,7 +200,7 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
     endDateTime.setHours(endHours, endMinutes, 0, 0)
 
     const sessionData = {
-      clerkId: "user_2y8hTtztUmImsUclU3hPNt8mzFY", // This would normally come from auth
+      clerkId: user.id,
       coachId: coach.clerkId,
       invitedMembers: selectedFriends,
       sessionName,
@@ -171,18 +245,27 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
     setSelectedFriends((prev) => (prev.includes(clerkId) ? prev.filter((id) => id !== clerkId) : [...prev, clerkId]))
   }
 
+  // Don't render if user is not loaded
+  if (!user) {
+    return null
+  }
+
+  // Get today's date with time set to midnight for comparison
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border-0 shadow-2xl backdrop-blur-xl">
         {/* Decorative background elements */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-lg" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-lg pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 pointer-events-none" />
 
         <DialogHeader className="relative">
           <div className="flex items-center gap-3 mb-2">
             <Avatar className="h-12 w-12 ring-2 ring-blue-500/50">
               <AvatarImage
-                src={coach.profileImageUrl || "/placeholder.svg"}
+                src={coach.profileImageUrl || "/placeholder.svg?height=48&width=48"}
                 alt={`${coach.firstName} ${coach.lastName}`}
               />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
@@ -212,8 +295,8 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
               id="session-name"
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              className="bg-slate-800/50 border-slate-600 focus:border-blue-500 focus:ring-blue-500/20 backdrop-blur-sm transition-all duration-200 hover:bg-slate-800/70"
               placeholder="Enter session name..."
+              className="bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
             />
           </div>
 
@@ -222,27 +305,103 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
               <CalendarIcon className="h-4 w-4 text-blue-400" />
               Date
             </Label>
-            <Popover>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal bg-slate-800/50 border-slate-600 hover:bg-slate-800/70 hover:border-blue-500 transition-all duration-200 backdrop-blur-sm",
-                    !date && "text-muted-foreground",
+                    "w-full justify-start text-left font-normal bg-slate-800/50 border-slate-600 hover:bg-slate-800/70 hover:border-blue-500 transition-all duration-200 backdrop-blur-sm text-white",
+                    !date && "text-white",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 text-blue-400" />
                   {date ? format(date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-slate-800/95 border-slate-600 backdrop-blur-xl">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(date) => date && setDate(date)}
-                  initialFocus
-                  className="bg-transparent"
-                />
+              <PopoverContent
+                className="w-auto p-0 bg-slate-800 border-slate-600 shadow-2xl pointer-events-auto"
+                align="start"
+                sideOffset={4}
+                style={{ zIndex: 99999 }}
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                {/* Custom Calendar Implementation */}
+                <div className="space-y-4 p-4 relative z-50 pointer-events-auto">
+                  {/* Month Navigation */}
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        previousMonth()
+                      }}
+                      className="h-7 w-7 bg-transparent p-0 text-white hover:bg-slate-700 rounded-md pointer-events-auto cursor-pointer relative z-10"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="sr-only">Previous month</span>
+                    </Button>
+                    <div className="font-medium text-white">{format(currentMonth, "MMMM yyyy")}</div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        nextMonth()
+                      }}
+                      className="h-7 w-7 bg-transparent p-0 text-white hover:bg-slate-700 rounded-md pointer-events-auto cursor-pointer relative z-10"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="sr-only">Next month</span>
+                    </Button>
+                  </div>
+
+                  {/* Day Names */}
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {dayNames.map((day) => (
+                      <div key={day} className="text-xs text-slate-400 font-medium py-1">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {/* Add empty cells for days before the start of the month */}
+                    {Array.from({ length: days[0].getDay() }).map((_, index) => (
+                      <div key={`empty-start-${index}`} className="h-9 w-9" />
+                    ))}
+
+                    {/* Render the days of the month */}
+                    {days.map((day) => {
+                      const isSelected = isSameDay(day, date)
+                      const isCurrentDay = isToday(day)
+                      const isPast = day < today
+
+                      return (
+                        <Button
+                          key={day.toString()}
+                          variant="ghost"
+                          size="icon"
+                          disabled={isPast}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSelectDate(day)
+                          }}
+                          className={cn(
+                            "h-9 w-9 p-0 font-normal rounded-md relative z-10 pointer-events-auto cursor-pointer",
+                            isSelected && "bg-blue-600 text-white hover:bg-blue-600",
+                            isCurrentDay && !isSelected && "bg-slate-700 text-white",
+                            isPast && "text-slate-500 opacity-50 cursor-not-allowed pointer-events-none",
+                            !isSelected && !isCurrentDay && !isPast && "text-white hover:bg-slate-700",
+                          )}
+                        >
+                          {format(day, "d")}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
@@ -253,13 +412,13 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
                 <Clock className="h-4 w-4 text-green-400" />
                 Start Time
               </Label>
-              <Select value={startTime} onValueChange={setStartTime}>
-                <SelectTrigger className="bg-slate-800/50 border-slate-600 hover:border-green-500 focus:border-green-500 transition-all duration-200 backdrop-blur-sm">
+              <Select value={startTime} onValueChange={handleStartTimeChange}>
+                <SelectTrigger className="bg-slate-800/50 border-slate-600 hover:border-green-500 focus:border-green-500 transition-all duration-200 backdrop-blur-sm text-white">
                   <SelectValue placeholder="Select start time" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800/95 border-slate-600 backdrop-blur-xl">
                   {timeOptions.map((time) => (
-                    <SelectItem key={`start-${time}`} value={time} className="hover:bg-slate-700/50">
+                    <SelectItem key={`start-${time}`} value={time} className="hover:bg-slate-700/50 text-white">
                       {time}
                     </SelectItem>
                   ))}
@@ -272,13 +431,13 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
                 <Clock className="h-4 w-4 text-red-400" />
                 End Time
               </Label>
-              <Select value={endTime} onValueChange={setEndTime}>
-                <SelectTrigger className="bg-slate-800/50 border-slate-600 hover:border-red-500 focus:border-red-500 transition-all duration-200 backdrop-blur-sm">
+              <Select value={endTime} onValueChange={handleEndTimeChange}>
+                <SelectTrigger className="bg-slate-800/50 border-slate-600 hover:border-red-500 focus:border-red-500 transition-all duration-200 backdrop-blur-sm text-white">
                   <SelectValue placeholder="Select end time" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800/95 border-slate-600 backdrop-blur-xl">
                   {timeOptions.map((time) => (
-                    <SelectItem key={`end-${time}`} value={time} className="hover:bg-slate-700/50">
+                    <SelectItem key={`end-${time}`} value={time} className="hover:bg-slate-700/50 text-white">
                       {time}
                     </SelectItem>
                   ))}
@@ -286,6 +445,14 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
               </Select>
             </div>
           </div>
+
+          {/* Time Error */}
+          {timeError && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+              <span className="text-sm text-red-300">{timeError}</span>
+            </div>
+          )}
 
           <div className="grid gap-3">
             <Label className="text-sm font-medium text-slate-300 flex items-center gap-2">
@@ -338,9 +505,9 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
               <div className="text-center py-8 bg-slate-800/30 rounded-lg border border-slate-700/50 backdrop-blur-sm">
                 <Users className="h-8 w-8 text-slate-500 mx-auto mb-2" />
                 <p className="text-sm text-slate-400">
-                  {startTime && endTime
+                  {startTime && endTime && !timeError
                     ? "No friends available for this time slot."
-                    : "Select start and end time to see available friends."}
+                    : "Select valid start and end time to see available friends."}
                 </p>
               </div>
             )}
@@ -351,14 +518,14 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
           <Button
             variant="outline"
             onClick={onClose}
-            className="bg-transparent border-slate-600 hover:bg-slate-800/50 hover:border-slate-500 transition-all duration-200"
+            className="bg-slate-800/50 border-slate-600 text-white hover:bg-slate-700/50"
           >
             Cancel
           </Button>
           <Button
             onClick={handleCreateSession}
-            disabled={isLoading}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || !!timeError}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white"
           >
             {isLoading ? (
               <>
