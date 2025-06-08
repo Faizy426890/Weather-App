@@ -225,43 +225,51 @@ export default function CoachesPage() {
     return (
       <Card key={session._id} className="bg-gray-800/50 border-gray-700">
         <CardContent className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white mb-3">{session.sessionName}</h3>
-              
-              {/* Coach Information */}
-              <div className="flex items-center gap-3 mb-3 p-3 bg-gray-700/30 rounded-lg">
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <img
-                    src={session.sessionCoach.profileImageUrl || "/placeholder.svg?height=40&width=40"}
-                    alt={`${session.sessionCoach.firstName} ${session.sessionCoach.lastName}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="text-white font-medium">
-                    {session.sessionCoach.firstName} {session.sessionCoach.lastName}
-                  </p>
-                  <p className="text-gray-400 text-sm">{session.sessionCoach.email}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 text-sm text-gray-400">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {startDateTime.date}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {startDateTime.time} - {endDateTime.time}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {session.totalParticipants} participant{session.totalParticipants !== 1 ? "s" : ""}
-                </div>
-              </div>
+          {/* Header with session name and status badge */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 className="text-lg font-semibold text-white">{session.sessionName}</h3>
+            <div className="flex-shrink-0">
+              {statusBadge}
             </div>
-            {statusBadge}
+          </div>
+          
+          {/* Coach Information */}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-gray-700/30 rounded-lg">
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+              <img
+                src={session.sessionCoach.profileImageUrl || "/placeholder.svg?height=40&width=40"}
+                alt={`${session.sessionCoach.firstName} ${session.sessionCoach.lastName}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-medium truncate">
+                {session.sessionCoach.firstName} {session.sessionCoach.lastName}
+              </p>
+              <p className="text-gray-400 text-sm truncate">{session.sessionCoach.email}</p>
+            </div>
+          </div>
+
+          {/* Session details - responsive grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+            <div className="bg-gray-700/20 p-2 rounded flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              <span className="text-sm text-gray-300 truncate">{startDateTime.date}</span>
+            </div>
+            
+            <div className="bg-gray-700/20 p-2 rounded flex items-center gap-2">
+              <Clock className="w-4 h-4 text-purple-400 flex-shrink-0" />
+              <span className="text-sm text-gray-300 truncate">
+                {startDateTime.time} - {endDateTime.time}
+              </span>
+            </div>
+            
+            <div className="bg-gray-700/20 p-2 rounded flex items-center gap-2">
+              <Users className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <span className="text-sm text-gray-300 truncate">
+                {session.totalParticipants} participant{session.totalParticipants !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
@@ -276,15 +284,15 @@ export default function CoachesPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-10 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+    <div className="min-h-screen p-4 md:p-6 lg:p-10 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
       {/* Header Section */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-white mb-8">
-        <h1 className="text-3xl font-bold mb-2">Find Your Perfect Coach</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Find Your Perfect Coach</h1>
         <p className="text-gray-300">Browse our elite roster of professional coaches</p>
       </motion.div>
 
       {/* Coaches Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {loading
           ? // Skeleton loading
             Array.from({ length: 3 }).map((_, index) => (
@@ -390,14 +398,14 @@ export default function CoachesPage() {
       </div>
 
       {/* My Sessions Section */}
-      <div className="mt-16">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-white mb-8">
-          <h2 className="text-3xl font-bold mb-2">My Sessions</h2>
+      <div className="mt-12 md:mt-16">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-white mb-6 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">My Sessions</h2>
           <p className="text-gray-300">Manage your created and invited sessions</p>
         </motion.div>
 
         {userSessionsLoading ? (
-          <div className="grid gap-8">
+          <div className="grid gap-6 md:gap-8">
             <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
                 <div className="h-7 bg-gray-700 rounded w-48 animate-pulse"></div>
@@ -410,7 +418,7 @@ export default function CoachesPage() {
           </div>
         ) : (
           <Tabs defaultValue="created" className="mb-8">
-            <TabsList className="bg-gray-800/50 border-gray-700">
+            <TabsList className="bg-gray-800/50 border-gray-700 w-full md:w-auto overflow-x-auto">
               <TabsTrigger value="created" className="data-[state=active]:bg-blue-600">
                 My Sessions
               </TabsTrigger>
@@ -440,7 +448,7 @@ export default function CoachesPage() {
             </TabsContent>
 
             <TabsContent value="invited" className="mt-6">
-              <div className="grid gap-8">
+              <div className="grid gap-6 md:gap-8">
                 {/* Ongoing Invited Sessions */}
                 <section>
                   <Card className="bg-gray-800/50 border-gray-700">

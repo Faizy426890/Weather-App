@@ -44,7 +44,7 @@ interface BookingModalProps {
 
 export default function BookingModal({ isOpen, onClose, coach }: BookingModalProps) {
   const { user } = useUser()
-  const [sessionName, setSessionName] = useState("Evening Meditation")
+  const [sessionName, setSessionName] = useState("")
   const [date, setDate] = useState<Date>(() => {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -52,8 +52,8 @@ export default function BookingModal({ isOpen, onClose, coach }: BookingModalPro
   })
   const [currentMonth, setCurrentMonth] = useState<Date>(date)
   const [calendarOpen, setCalendarOpen] = useState(false)
-  const [startTime, setStartTime] = useState<string>("16:00")
-  const [endTime, setEndTime] = useState<string>("17:00")
+  const [startTime, setStartTime] = useState<string>("")
+  const [endTime, setEndTime] = useState<string>("")
   const [availableFriends, setAvailableFriends] = useState<Friend[]>([])
   const [selectedFriends, setSelectedFriends] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
