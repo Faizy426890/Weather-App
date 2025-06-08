@@ -39,7 +39,11 @@ export function Sidebar() {
   const menuItems = [ 
     { icon: Calendar, label: "Home", href: "/dashboard" },
     { icon: Calendar, label: "Manage Tournaments", href: "/dashboard/event-management" },
-    { icon: UserCog, label: "Coach Hiring", href: "/dashboard/coaches" },
+    { icon: UserCog, label: "Coach Hiring", href: "/dashboard/coaches" ,
+         disabled: isCoach,
+      tooltip: isCoach ? "You are already registered as a coach" : null, 
+
+     },
     // { icon: HeartPulse, label: "Health Record", href: "/dashboard/health-record" },
     { icon: GamepadIcon, label: "Game Suggestion", href: "/dashboard/game-suggestions" },
     { icon: UserCircle, label: "User Profile", href: "/dashboard/user-profile" }, 

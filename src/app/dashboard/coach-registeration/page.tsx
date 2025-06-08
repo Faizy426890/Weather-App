@@ -121,7 +121,8 @@ export default function RegisterCoach() {
 
       if (response.status === 201) {
         toast.success(data.message || "Successfully registered as a coach!")
-        resetForm()
+        resetForm() 
+        window.location.reload();
         router.push(`/dashboard/coach-dashboard?coachId=${user.id}`)
       } else {
         toast.error(data.message || "Failed to register as a coach")

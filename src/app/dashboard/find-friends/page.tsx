@@ -58,7 +58,7 @@ interface SearchUser {
   achievements: Achievement[]
 }
 
-interface UserInfo {
+interface UserRelationship {
   _id: string
   clerkId: string
   email: string
@@ -67,21 +67,17 @@ interface UserInfo {
   profileImageUrl: string
   bio: string
   achievements: Achievement[]
-  friendRequests: any[]
-  friends: any[]
-  sentRequests: {
-    clerkId: string
-    email: string
-    firstName: string
-    lastName: string
-    profileImageUrl: string
-    role: string
-    isCoach: string
-    bio: string
-    achievements: Achievement[]
-  }[]
-  isCoach: string
   role: string
+  isCoach: string
+  sentRequests?: string[]
+  friendRequests?: string[]
+  friends?: string[]
+}
+
+interface RelationshipsData {
+  friendRequests: UserRelationship[]
+  sentRequests: UserRelationship[]
+  friends: UserRelationship[]
 }
 
 // Icon mapping for achievements
@@ -99,10 +95,15 @@ export default function FindFriends() {
   const [friendSuggestions, setFriendSuggestions] = useState<FriendSuggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+  const [relationshipsData, setRelationshipsData] = useState<RelationshipsData>({
+    friendRequests: [],
+    sentRequests: [],
+    friends: [],
+  })
   const [acceptingRequest, setAcceptingRequest] = useState<string | null>(null)
   const [deletingRequest, setDeletingRequest] = useState<string | null>(null)
   const [sendingRequest, setSendingRequest] = useState<string | null>(null)
+  const [cancelingRequest, setCancelingRequest] = useState<string | null>(null)
 
   // New states for search functionality
   const [searchResults, setSearchResults] = useState<SearchUser[]>([])
@@ -125,7 +126,7 @@ export default function FindFriends() {
   useEffect(() => {
     if (user?.id) {
       fetchFriendSuggestions()
-      fetchUserInfo()
+      fetchUserRelationships()
     }
   }, [user?.id])
 
@@ -188,13 +189,13 @@ export default function FindFriends() {
     }
   }
 
-  const fetchUserInfo = async () => {
+  const fetchUserRelationships = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_WEATHER_URL}/api/user-info?clerkId=${user?.id}`)
-      setUserInfo(response.data)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_WEATHER_URL}/api/user/relationships/${user?.id}`)
+      setRelationshipsData(response.data)
     } catch (error) {
-      console.error("Error fetching user info:", error)
-      toast.error("Failed to load user information")
+      console.error("Error fetching user relationships:", error)
+      toast.error("Failed to load user relationships")
     }
   }
 
@@ -206,8 +207,8 @@ export default function FindFriends() {
         toClerkId: toClerkId,
       })
 
-      // Refresh user info to get updated sentRequests
-      await fetchUserInfo()
+      // Refresh relationships to get updated data
+      await fetchUserRelationships()
 
       toast.success("Friend request sent successfully!")
     } catch (error) {
@@ -220,21 +221,24 @@ export default function FindFriends() {
 
   const cancelFriendRequest = async (toClerkId: string) => {
     try {
-      setSendingRequest(toClerkId)
+      setCancelingRequest(toClerkId)
       await axios.post(`${process.env.NEXT_PUBLIC_WEATHER_URL}/api/cancel-friend-request`, {
         fromClerkId: user?.id,
         toClerkId: toClerkId,
       })
 
-      // Refresh user info to get updated sentRequests
-      await fetchUserInfo()
+      // Update state immediately by removing from sentRequests
+      setRelationshipsData((prev) => ({
+        ...prev,
+        sentRequests: prev.sentRequests.filter((request) => request.clerkId !== toClerkId),
+      }))
 
       toast.success("Friend request cancelled successfully!")
     } catch (error) {
       console.error("Error cancelling friend request:", error)
       toast.error("Failed to cancel friend request")
     } finally {
-      setSendingRequest(null)
+      setCancelingRequest(null)
     }
   }
 
@@ -246,8 +250,15 @@ export default function FindFriends() {
         toClerkId: user?.id,
       })
 
-      // Refresh user info to get updated friend requests
-      await fetchUserInfo()
+      // Update state immediately
+      const acceptedRequest = relationshipsData.friendRequests.find((req) => req.clerkId === fromClerkId)
+      if (acceptedRequest) {
+        setRelationshipsData((prev) => ({
+          ...prev,
+          friendRequests: prev.friendRequests.filter((req) => req.clerkId !== fromClerkId),
+          friends: [...prev.friends, acceptedRequest],
+        }))
+      }
 
       toast.success("Friend request accepted!")
     } catch (error) {
@@ -266,20 +277,23 @@ export default function FindFriends() {
         toClerkId: user?.id,
       })
 
-      // Refresh user info to get updated friend requests
-      await fetchUserInfo()
+      // Update state immediately by removing from friendRequests
+      setRelationshipsData((prev) => ({
+        ...prev,
+        friendRequests: prev.friendRequests.filter((req) => req.clerkId !== fromClerkId),
+      }))
 
-      toast.success("Friend request deleted!")
+      toast.success("Friend request declined!")
     } catch (error) {
-      console.error("Error deleting friend request:", error)
-      toast.error("Failed to delete friend request")
+      console.error("Error declining friend request:", error)
+      toast.error("Failed to decline friend request")
     } finally {
       setDeletingRequest(null)
     }
   }
 
   const hasRequestBeenSent = (friendClerkId: string) => {
-    return userInfo?.sentRequests?.some((request) => request.clerkId === friendClerkId) || false
+    return relationshipsData.sentRequests.some((request) => request.clerkId === friendClerkId)
   }
 
   const getAchievementIcon = (iconName: string) => {
@@ -347,6 +361,113 @@ export default function FindFriends() {
       }
     }
   }, [filteredSuggestions])
+
+  // Render user card component
+  const renderUserCard = (user: UserRelationship, type: "friendRequest" | "sentRequest" | "friend", index: number) => (
+    <div
+      key={user.clerkId}
+      className="group relative bg-gradient-to-br from-gray-800/50 via-purple-900/20 to-gray-900/50 rounded-2xl border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 overflow-hidden"
+    >
+      {/* Card Content Container with fixed height and flex layout */}
+      <div className="h-[200px] flex flex-col">
+        {/* Header Section */}
+        <div className="p-6 flex-shrink-0">
+          {/* Profile Header */}
+          <div className="flex items-start space-x-4 mb-4">
+            <div className="relative flex-shrink-0">
+              <Avatar className="h-16 w-16 ring-2 ring-purple-500/30 shadow-lg">
+                <AvatarImage src={user.profileImageUrl || "/placeholder.svg"} alt={user.firstName} />
+                <AvatarFallback className="bg-purple-500 text-white font-bold text-lg">
+                  {getInitials(user.firstName, user.lastName)}
+                </AvatarFallback>
+              </Avatar>
+              {type === "friendRequest" && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 rounded-full border-2 border-gray-900/50 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-white text-lg leading-tight mb-1">
+                {user.firstName} {user.lastName}
+              </h3>
+              <p className="text-[#b0b3b8] text-sm flex items-center mb-1">
+                <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span>{user.email}</span>
+              </p>
+              {user.bio && <p className="text-gray-300 text-xs leading-relaxed">{truncateBio(user.bio, 20)}</p>}
+              <div className="flex items-center text-[#b0b3b8] text-xs mt-1">
+                <Clock className="h-3 w-3 mr-1" />
+                <span>
+                  {type === "friendRequest" ? "Pending request" : type === "sentRequest" ? "Request sent" : "Friends"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="p-6 pt-0 mt-auto">
+          {type === "friendRequest" && (
+            <div className="flex space-x-3">
+              <button
+                onClick={() => acceptFriendRequest(user.clerkId)}
+                disabled={acceptingRequest === user.clerkId}
+                className="flex-1 bg-[#42b883] hover:bg-[#369870] text-white font-semibold py-2 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-[#42b883]/25 hover:scale-105"
+              >
+                {acceptingRequest === user.clerkId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Accept
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => deleteFriendRequest(user.clerkId)}
+                disabled={deletingRequest === user.clerkId}
+                className="flex-1 bg-[#3a3b3c] hover:bg-[#4e4f50] text-[#e4e6ea] hover:text-white font-semibold py-2 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center border border-[#4e4f50] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+              >
+                {deletingRequest === user.clerkId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Decline
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {type === "sentRequest" && (
+            <button
+              onClick={() => cancelFriendRequest(user.clerkId)}
+              disabled={cancelingRequest === user.clerkId}
+              className="w-full bg-[#3a3b3c] hover:bg-[#4e4f50] text-[#e4e6ea] hover:text-white font-semibold py-3 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center border border-[#4e4f50] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+            >
+              {cancelingRequest === user.clerkId ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel Request
+                </>
+              )}
+            </button>
+          )}
+
+          {type === "friend" && (
+            <button className="w-full bg-[#42b883] text-white font-semibold py-3 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg cursor-default">
+              <UserCheck className="h-4 w-4 mr-2" />
+              Friends
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/30 to-black">
@@ -416,7 +537,7 @@ export default function FindFriends() {
               hasRequestBeenSent={hasRequestBeenSent}
               sendFriendRequest={sendFriendRequest}
               cancelFriendRequest={cancelFriendRequest}
-              userInfo={userInfo}
+              userInfo={relationshipsData}
               acceptingRequest={acceptingRequest}
               deletingRequest={deletingRequest}
               acceptFriendRequest={acceptFriendRequest}
@@ -425,7 +546,7 @@ export default function FindFriends() {
           </div>
         )}
 
-        {/* Pending Friend Requests Section - Always Show */}
+        {/* Pending Friend Requests Section */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-6">
             <div className="p-2 bg-[#42b883] rounded-lg shadow-lg">
@@ -433,105 +554,19 @@ export default function FindFriends() {
             </div>
             <h2 className="text-xl font-semibold text-white">
               Pending Friend Requests
-              {userInfo?.friendRequests && userInfo.friendRequests.length > 0 && (
+              {relationshipsData.friendRequests.length > 0 && (
                 <span className="ml-2 px-3 py-1 bg-[#42b883]/20 text-[#42b883] text-sm rounded-full border border-[#42b883]/30">
-                  {userInfo.friendRequests.length}
+                  {relationshipsData.friendRequests.length}
                 </span>
               )}
             </h2>
           </div>
 
-          {userInfo?.friendRequests && userInfo.friendRequests.length > 0 ? (
+          {relationshipsData.friendRequests.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {userInfo.friendRequests.map((request) => (
-                <div
-                  key={request.clerkId}
-                  className="group relative bg-gradient-to-br from-gray-800/50 via-purple-900/20 to-gray-900/50 rounded-2xl border border-purple-500/20 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 overflow-hidden"
-                >
-                  {/* Card Content Container with fixed height and flex layout */}
-                  <div className="h-[200px] flex flex-col">
-                    {/* Header Section */}
-                    <div className="p-6 flex-shrink-0">
-                      {/* Profile Header */}
-                      <div className="flex items-start space-x-4 mb-4">
-                        <div className="relative flex-shrink-0">
-                          <Avatar className="h-16 w-16 ring-2 ring-purple-500/30 shadow-lg">
-                            <AvatarImage src={request.profileImageUrl || "/placeholder.svg"} alt={request.firstName} />
-                            <AvatarFallback className="bg-purple-500 text-white font-bold text-lg">
-                              {getInitials(request.firstName, request.lastName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 rounded-full border-2 border-gray-900/50 flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-white text-lg leading-tight mb-1">
-                            {request.firstName} {request.lastName}
-                          </h3>
-                          <p className="text-[#b0b3b8] text-sm flex items-center mb-1">
-                            <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
-                            <span>{request.email}</span>
-                          </p>
-                          {request.bio && (
-                            <p className="text-gray-300 text-xs leading-relaxed">{truncateBio(request.bio, 20)}</p>
-                          )}
-                          <div className="flex items-center text-[#b0b3b8] text-xs mt-1">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>2 hours ago</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content Section - Flexible height */}
-                    <div className="px-6 flex-1 flex flex-col">
-                      {/* Bio */}
-                      {/* {request.bio && (
-                        <div className="mb-4">
-                          <p className="text-[#e4e6ea] text-sm leading-relaxed bg-[#3a3b3c] rounded-lg p-3 border border-[#4e4f50]">
-                            {truncateBio(request.bio, 20)}
-                          </p>
-                        </div>
-                      )} */}
-                    </div>
-
-                    {/* Action Buttons - Fixed at bottom with 20px margin */}
-                    <div className="p-6 pt-0 mt-auto">
-                      <div className="flex space-x-3">
-                        <button
-                          onClick={() => acceptFriendRequest(request.clerkId)}
-                          disabled={acceptingRequest === request.clerkId}
-                          className="flex-1 bg-[#42b883] hover:bg-[#369870] text-white font-semibold py-2 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-[#42b883]/25 hover:scale-105"
-                        >
-                          {acceptingRequest === request.clerkId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Check className="h-4 w-4 mr-2" />
-                              Accept
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => deleteFriendRequest(request.clerkId)}
-                          disabled={deletingRequest === request.clerkId}
-                          className="flex-1 bg-[#3a3b3c] hover:bg-[#4e4f50] text-[#e4e6ea] hover:text-white font-semibold py-2 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center border border-[#4e4f50] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                        >
-                          {deletingRequest === request.clerkId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <X className="h-4 w-4 mr-2" />
-                              Decline
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {relationshipsData.friendRequests.map((request, index) =>
+                renderUserCard(request, "friendRequest", index),
+              )}
             </div>
           ) : (
             <div className="bg-gradient-to-br from-gray-800/50 via-purple-900/20 to-gray-900/50 rounded-2xl p-12 border border-purple-500/20 text-center shadow-lg">
@@ -544,7 +579,69 @@ export default function FindFriends() {
           )}
         </div>
 
-        {/* Friend Suggestions Section - Show when not searching or search term is too short */}
+        {/* Sent Requests Section */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-2 bg-[#f39c12] rounded-lg shadow-lg">
+              <Clock className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-white">
+              Sent Requests
+              {relationshipsData.sentRequests.length > 0 && (
+                <span className="ml-2 px-3 py-1 bg-[#f39c12]/20 text-[#f39c12] text-sm rounded-full border border-[#f39c12]/30">
+                  {relationshipsData.sentRequests.length}
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {relationshipsData.sentRequests.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {relationshipsData.sentRequests.map((request, index) => renderUserCard(request, "sentRequest", index))}
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-gray-800/50 via-purple-900/20 to-gray-900/50 rounded-2xl p-12 border border-purple-500/20 text-center shadow-lg">
+              <div className="w-16 h-16 bg-[#3a3b3c] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-[#b0b3b8]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#e4e6ea] mb-2">No Sent Requests</h3>
+              <p className="text-[#b0b3b8]">You haven't sent any friend requests yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Friends Section */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-2 bg-[#e74c3c] rounded-lg shadow-lg">
+              <Users className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-white">
+              Friends
+              {relationshipsData.friends.length > 0 && (
+                <span className="ml-2 px-3 py-1 bg-[#e74c3c]/20 text-[#e74c3c] text-sm rounded-full border border-[#e74c3c]/30">
+                  {relationshipsData.friends.length}
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {relationshipsData.friends.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {relationshipsData.friends.map((friend, index) => renderUserCard(friend, "friend", index))}
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-gray-800/50 via-purple-900/20 to-gray-900/50 rounded-2xl p-12 border border-purple-500/20 text-center shadow-lg">
+              <div className="w-16 h-16 bg-[#3a3b3c] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-[#b0b3b8]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#e4e6ea] mb-2">No Friends Yet</h3>
+              <p className="text-[#b0b3b8]">Start connecting with people to build your network!</p>
+            </div>
+          )}
+        </div>
+
+        {/* Friend Suggestions Section - Show when not searching */}
         {!showSearchResults && (
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-6">
@@ -635,10 +732,10 @@ export default function FindFriends() {
                           {hasRequestBeenSent(friend.clerkId) ? (
                             <button
                               onClick={() => cancelFriendRequest(friend.clerkId)}
-                              disabled={sendingRequest === friend.clerkId}
+                              disabled={cancelingRequest === friend.clerkId}
                               className="w-full bg-[#3a3b3c] hover:bg-[#4e4f50] text-[#e4e6ea] hover:text-white font-semibold py-3 px-4 text-sm rounded-lg transition-all duration-300 flex items-center justify-center border border-[#4e4f50] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
                             >
-                              {sendingRequest === friend.clerkId ? (
+                              {cancelingRequest === friend.clerkId ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <>
