@@ -171,7 +171,7 @@ function Home() {
                     </div>
                     <Button
                       variant="ghost"
-                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-black"
+                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
                       onClick={() => router.push("/dashboard/user-profile")}
                     >
                       <User className="h-4 w-4 text-purple-400" />
@@ -179,7 +179,7 @@ function Home() {
                     </Button>
                     <Button
                       variant="ghost"
-                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-black"
+                      className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
                       onClick={() => setShowSignOutModal(true)}
                     >
                       <LogOut className="h-4 w-4 text-purple-400" />
@@ -251,7 +251,7 @@ function Home() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs text-white border-gray-700 hover:bg-gray-800 "
+                            className="text-xs text-black border-gray-700 hover:bg-gray-800 "
                             onClick={() => router.push("/dashboard/user-profile")}
                           >
                             Dashboard
@@ -259,7 +259,7 @@ function Home() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs text-white border-gray-700 hover:bg-gray-800 hover:text-gray-200"
+                            className="text-xs text-black border-gray-700 hover:bg-gray-800 hover:text-gray-200"
                             onClick={() => setShowSignOutModal(true)}
                           >
                             Sign out
