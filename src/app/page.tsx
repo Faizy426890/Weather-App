@@ -306,7 +306,7 @@ function Home() {
               <Button
                 size="lg"
                 onClick={() => {
-                  isSignedIn ? router.push("/dashboard/user-profile") : router.push("/sign-in")
+                  isSignedIn ? router.push("/dashboard") : router.push("/sign-in")
                 }}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
@@ -480,7 +480,7 @@ function Home() {
               <Button
                 size="lg"
                 onClick={() => {
-                  isSignedIn ? router.push("/dashboard/user-profile") : router.push("/sign-in")
+                  isSignedIn ? router.push("/dashboard") : router.push("/sign-in")
                 }}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >

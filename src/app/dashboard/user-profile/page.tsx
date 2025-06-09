@@ -8,7 +8,8 @@ import { Award, Calendar, PlusCircle, Save, X } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input" 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button" 
+import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"  
 import axios from 'axios'
 import { ToastContainer, toast } from "react-toastify"
@@ -22,8 +23,12 @@ interface Achievement {
 
 export default function UserProfile() {
   const { user, isLoaded } = useUser()
-  const achievementInputRef = useRef<HTMLInputElement>(null)
+  const achievementInputRef = useRef<HTMLInputElement>(null) 
+    const router = useRouter();
 
+ const handleNavigate = () => {
+    router.push('/dashboard/game-suggestions');
+  };
   const [bio, setBio] = useState<string>("")
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [editingBio, setEditingBio] = useState<boolean>(false)
@@ -429,7 +434,7 @@ Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
           >
             <h2 className="text-xl font-semibold text-white mb-2">Ready to play?</h2>
             <p className="text-gray-300 mb-4">Join a game or create your own event!</p>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors duration-200">
+            <Button onClick={handleNavigate} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors duration-200">
               Find a Game
             </Button>
           </motion.div>

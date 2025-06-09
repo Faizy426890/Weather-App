@@ -2,15 +2,15 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useClerk } from "@clerk/nextjs"
 import { motion, AnimatePresence } from "framer-motion"
 import { Activity, Award, UserCircle, LogOut, X } from "lucide-react"
 
 const menuItems = [
   { icon: Activity, label: "Sessions", href: "/dashboard/coach-dashboard/sessions" },
   { icon: Award, label: "Dashboard", href: "/dashboard/coach-dashboard" },
-  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach-dashboard/profile" }, 
-
+  { icon: UserCircle, label: "My Profile", href: "/dashboard/coach-dashboard/profile" },
 ]
 
 interface SidebarProps {
@@ -20,6 +20,8 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { signOut } = useClerk()
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -28,6 +30,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     document.addEventListener("keydown", handleEscape)
     return () => document.removeEventListener("keydown", handleEscape)
   }, [onClose])
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirectUrl: "/" })
+    } catch (error) {
+      console.error("Logout failed:", error)
+      router.push("/") // fallback redirect
+    }
+  }
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -69,7 +80,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => console.log("Logout")}
+          onClick={handleLogout}
           className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:text-white hover:bg-red-500/20 transition-colors"
         >
           <LogOut className="w-5 h-5" />
@@ -110,4 +121,3 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     </>
   )
 }
-
