@@ -172,22 +172,22 @@ export default function CoachesPage() {
   const renderUserStatusBadge = (session: Session) => {
     if (session.accepted) {
       return (
-        <Badge className="bg-green-600 text-white px-3 py-1">
-          <CheckCircle className="w-4 h-4 mr-1" />
+        <Badge className="bg-green-600 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Accepted
         </Badge>
       )
     } else if (session.rejected) {
       return (
-        <Badge className="bg-red-600 text-white px-3 py-1">
-          <XCircle className="w-4 h-4 mr-1" />
+        <Badge className="bg-red-600 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+          <XCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Rejected
         </Badge>
       )
     } else {
       return (
-        <Badge className="bg-yellow-600 text-white px-3 py-1">
-          <AlertCircle className="w-4 h-4 mr-1" />
+        <Badge className="bg-yellow-600 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Pending
         </Badge>
       )
@@ -206,8 +206,8 @@ export default function CoachesPage() {
 
     if (sessionStart <= now && now <= sessionEnd && session.accepted) {
       statusBadge = (
-        <Badge className="bg-green-600 text-white px-3 py-1">
-          <Sparkles className="w-4 h-4 mr-1" />
+        <Badge className="bg-green-600 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+          <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Active
         </Badge>
       )
@@ -215,66 +215,74 @@ export default function CoachesPage() {
 
     if (sessionEnd < now && !session.accepted && !session.rejected) {
       statusBadge = (
-        <Badge className="bg-gray-600 text-white px-3 py-1">
-          <AlertCircle className="w-4 h-4 mr-1" />
+        <Badge className="bg-gray-600 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
           Expired
         </Badge>
       )
     }
 
     return (
-      <Card key={session._id} className="bg-gray-800/50 border-gray-700">
-        <CardContent className="p-6">
+      <Card key={session._id} className="bg-gray-800/50 border-gray-700 w-full max-w-full">
+        <CardContent className="p-4 sm:p-6">
           {/* Header with session name and status badge */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <h3 className="text-lg font-semibold text-white">{session.sessionName}</h3>
-            <div className="flex-shrink-0">
-              {statusBadge}
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-base sm:text-lg font-semibold text-white break-words flex-1 min-w-0">
+                {session.sessionName}
+              </h3>
+              <div className="flex-shrink-0">
+                {statusBadge}
+              </div>
             </div>
           </div>
           
           {/* Coach Information */}
           <div className="flex items-center gap-3 mb-4 p-3 bg-gray-700/30 rounded-lg">
-            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden flex-shrink-0">
               <img
                 src={session.sessionCoach.profileImageUrl || "/placeholder.svg?height=40&width=40"}
                 alt={`${session.sessionCoach.firstName} ${session.sessionCoach.lastName}`}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="min-w-0">
-              <p className="text-white font-medium truncate">
+            <div className="min-w-0 flex-1">
+              <p className="text-white font-medium text-sm sm:text-base break-words">
                 {session.sessionCoach.firstName} {session.sessionCoach.lastName}
               </p>
-              <p className="text-gray-400 text-sm truncate">{session.sessionCoach.email}</p>
+              <p className="text-gray-400 text-xs sm:text-sm break-all">
+                {session.sessionCoach.email}
+              </p>
             </div>
           </div>
 
-          {/* Session details - responsive grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-            <div className="bg-gray-700/20 p-2 rounded flex items-center gap-2">
+          {/* Session details - responsive stack on mobile */}
+          <div className="space-y-2 mb-4">
+            <div className="bg-gray-700/20 p-2 sm:p-3 rounded flex items-center gap-2">
               <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0" />
-              <span className="text-sm text-gray-300 truncate">{startDateTime.date}</span>
+              <span className="text-xs sm:text-sm text-gray-300 break-words">
+                {startDateTime.date}
+              </span>
             </div>
             
-            <div className="bg-gray-700/20 p-2 rounded flex items-center gap-2">
+            <div className="bg-gray-700/20 p-2 sm:p-3 rounded flex items-center gap-2">
               <Clock className="w-4 h-4 text-purple-400 flex-shrink-0" />
-              <span className="text-sm text-gray-300 truncate">
+              <span className="text-xs sm:text-sm text-gray-300 break-words">
                 {startDateTime.time} - {endDateTime.time}
               </span>
             </div>
             
-            <div className="bg-gray-700/20 p-2 rounded flex items-center gap-2">
+            <div className="bg-gray-700/20 p-2 sm:p-3 rounded flex items-center gap-2">
               <Users className="w-4 h-4 text-green-400 flex-shrink-0" />
-              <span className="text-sm text-gray-300 truncate">
+              <span className="text-xs sm:text-sm text-gray-300">
                 {session.totalParticipants} participant{session.totalParticipants !== 1 ? "s" : ""}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <Badge className="bg-blue-600 text-white px-3 py-1">
-              <Clock className="w-4 h-4 mr-1" />
+          <div className="flex items-center justify-start">
+            <Badge className="bg-blue-600 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               {duration}
             </Badge>
           </div>
@@ -418,11 +426,11 @@ export default function CoachesPage() {
           </div>
         ) : (
           <Tabs defaultValue="created" className="mb-8">
-            <TabsList className="bg-gray-800/50 border-gray-700 w-full md:w-auto overflow-x-auto">
-              <TabsTrigger value="created" className="data-[state=active]:bg-blue-600">
+            <TabsList className="bg-gray-800/50 border-gray-700 w-full grid grid-cols-2 md:w-auto md:grid-cols-none md:flex">
+              <TabsTrigger value="created" className="data-[state=active]:bg-blue-600 text-xs sm:text-sm">
                 My Sessions
               </TabsTrigger>
-              <TabsTrigger value="invited" className="data-[state=active]:bg-blue-600">
+              <TabsTrigger value="invited" className="data-[state=active]:bg-blue-600 text-xs sm:text-sm">
                 Invited Sessions
               </TabsTrigger>
             </TabsList>
@@ -448,24 +456,26 @@ export default function CoachesPage() {
             </TabsContent>
 
             <TabsContent value="invited" className="mt-6">
-              <div className="grid gap-6 md:gap-8">
+              <div className="space-y-6 md:space-y-8">
                 {/* Ongoing Invited Sessions */}
                 <section>
                   <Card className="bg-gray-800/50 border-gray-700">
-                    <CardHeader>
-                      <CardTitle className="text-xl text-white flex items-center gap-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        Ongoing Sessions
-                        <Badge className="bg-green-600 text-white px-2 py-1 text-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg sm:text-xl text-white flex flex-wrap items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                        <span className="break-words">Ongoing Sessions</span>
+                        <Badge className="bg-green-600 text-white px-2 py-1 text-xs flex-shrink-0">
                           {userSessionsData?.ongoingSessions.length || 0}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {userSessionsData?.ongoingSessions.length === 0 ? (
-                        <div className="text-center py-8 text-gray-400">No ongoing sessions at the moment</div>
+                        <div className="text-center py-8 text-gray-400 text-sm sm:text-base">No ongoing sessions at the moment</div>
                       ) : (
-                        userSessionsData?.ongoingSessions.map((session) => renderUserSessionCard(session))
+                        <div className="space-y-4">
+                          {userSessionsData?.ongoingSessions.map((session) => renderUserSessionCard(session))}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -474,20 +484,22 @@ export default function CoachesPage() {
                 {/* Upcoming Invited Sessions */}
                 <section>
                   <Card className="bg-gray-800/50 border-gray-700">
-                    <CardHeader>
-                      <CardTitle className="text-xl text-white flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-blue-400" />
-                        Upcoming Sessions
-                        <Badge className="bg-blue-600 text-white px-2 py-1 text-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg sm:text-xl text-white flex flex-wrap items-center gap-2">
+                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0" />
+                        <span className="break-words">Upcoming Sessions</span>
+                        <Badge className="bg-blue-600 text-white px-2 py-1 text-xs flex-shrink-0">
                           {userSessionsData?.upcomingSessions.length || 0}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {userSessionsData?.upcomingSessions.length === 0 ? (
-                        <div className="text-center py-8 text-gray-400">No upcoming sessions scheduled</div>
+                        <div className="text-center py-8 text-gray-400 text-sm sm:text-base">No upcoming sessions scheduled</div>
                       ) : (
-                        userSessionsData?.upcomingSessions.map((session) => renderUserSessionCard(session))
+                        <div className="space-y-4">
+                          {userSessionsData?.upcomingSessions.map((session) => renderUserSessionCard(session))}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -496,22 +508,24 @@ export default function CoachesPage() {
                 {/* Past Invited Sessions */}
                 <section>
                   <Card className="bg-gray-800/50 border-gray-700">
-                    <CardHeader>
-                      <CardTitle className="text-xl text-white flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-gray-400" />
-                        Past Sessions
-                        <Badge className="bg-gray-600 text-white px-2 py-1 text-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg sm:text-xl text-white flex flex-wrap items-center gap-2">
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+                        <span className="break-words">Past Sessions</span>
+                        <Badge className="bg-gray-600 text-white px-2 py-1 text-xs flex-shrink-0">
                           {userSessionsData?.pastSessions.length || 0}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {userSessionsData?.pastSessions.length === 0 ? (
-                        <div className="text-center py-8 text-gray-400">No past sessions found</div>
+                        <div className="text-center py-8 text-gray-400 text-sm sm:text-base">No past sessions found</div>  
                       ) : (
-                        userSessionsData?.pastSessions.map((session) => renderUserSessionCard(session))
+                        <div className="space-y-4">
+                          {userSessionsData?.pastSessions.map((session) => renderUserSessionCard(session))}
+                        </div>
                       )}
-                    </CardContent>
+                    </CardContent>  
                   </Card>
                 </section>
               </div>
