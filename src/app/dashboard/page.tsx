@@ -3,22 +3,20 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { WeatherWidget } from './Components/WeatherWidget';
-import { StatsWidget } from './Components/StatsWidget';
 import { AlertWidget } from './Components/AlertWidget';
+import { GameSuggestions } from './Components/games-suggestions';
 
 const WEATHER_CACHE_KEY = 'weatherDataCache';
 const CACHE_EXPIRY_MINUTES = 30;
 
 export default function Dashboard() {
-  const [stepsData, setStepsData] = useState(Array.from({ length: 24 }, () => ({ value: 0 })));
-  const [heartRateData, setHeartRateData] = useState(Array.from({ length: 24 }, () => ({ value: 0 })));
-  const [caloriesData, setCaloriesData] = useState(Array.from({ length: 24 }, () => ({ value: 0 })));
-  
   const [isClient, setIsClient] = useState(false); 
   const [weatherData, setWeatherData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(true);
+  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
   const getCachedWeatherData = () => {
     const cachedData = localStorage.getItem(WEATHER_CACHE_KEY);
@@ -26,7 +24,6 @@ export default function Dashboard() {
     
     try {
       const parsedData = JSON.parse(cachedData);
-      // Check if cache is expired
       if (Date.now() - parsedData.timestamp > CACHE_EXPIRY_MINUTES * 60 * 1000) {
         localStorage.removeItem(WEATHER_CACHE_KEY);
         return null;
@@ -38,7 +35,7 @@ export default function Dashboard() {
     }
   };
 
-  const cacheWeatherData = (data : any) => {
+  const cacheWeatherData = (data: any) => {
     const cacheItem = {
       data,
       timestamp: Date.now()
@@ -46,7 +43,7 @@ export default function Dashboard() {
     localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(cacheItem));
   };
 
-  const fetchWeatherData = (lat : any, lon : any) => {
+  const fetchWeatherData = (lat: any, lon: any) => {
     const apiKey = '6745c98c8992f382217f7d45c36aba00';
     
     const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
@@ -62,12 +59,46 @@ export default function Dashboard() {
       setForecastData(forecastData);
       cacheWeatherData(weatherData);
       setLoading(false);
+      setLocationEnabled(true);
+      setLocationPermissionDenied(false);
     })
     .catch(error => {
       console.error('Fetch error:', error);
       setErrorMsg('Failed to fetch weather data.');
       setLoading(false);
     });
+  };
+
+  const requestLocation = () => {
+    if (navigator.geolocation) {
+      setLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          fetchWeatherData(lat, lon);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setLocationPermissionDenied(true);
+          setLocationEnabled(false);
+          setLoading(false);
+        }
+      );
+    } else {
+      setErrorMsg('Geolocation is not supported by this browser.');
+      setLoading(false);
+    }
+  };
+
+  const handleLocationToggle = () => {
+    if (locationEnabled) {
+      setLocationEnabled(false);
+      setWeatherData(null);
+      setForecastData(null);
+    } else {
+      requestLocation();
+    }
   };
 
   useEffect(() => {
@@ -78,28 +109,13 @@ export default function Dashboard() {
     if (cachedData) {
       setWeatherData(cachedData.currentData);
       setForecastData(cachedData.forecastData);
+      setLocationEnabled(true);
       setLoading(false);
       return;
     }
 
-    // Only fetch if no cached data
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          fetchWeatherData(lat, lon);
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          setErrorMsg('Location permission denied or unavailable.');
-          setLoading(false);
-        }
-      );
-    } else {
-      setErrorMsg('Geolocation is not supported by this browser.');
-      setLoading(false);
-    }
+    // Try to get location automatically on first load
+    requestLocation();
   }, []);
 
   if (!isClient) {
@@ -148,41 +164,21 @@ export default function Dashboard() {
               forecastData={forecastData}
               loading={loading}
               error={errorMsg}
+              locationEnabled={locationEnabled}
+              locationPermissionDenied={locationPermissionDenied}
+              onLocationToggle={handleLocationToggle}
             />
 
-            <div className="grid gap-6 md:grid-cols-3">
-              <StatsWidget
-                title="Daily Steps"
-                value={7.4}
-                maxValue={10}
-                color="#10B981"
-                gradientId="steps-gradient"
-                icon="steps"
-                data={stepsData}
-              />
-
-              <StatsWidget
-                title="Heart Rate"
-                value={87}
-                maxValue={200}
-                color="#EF4444"
-                gradientId="heart-gradient"
-                icon="heart"
-                data={heartRateData}
-              />
-
-              <StatsWidget
-                title="Calories"
-                value={600}
-                maxValue={2500}
-                color="#3B82F6"
-                gradientId="calories-gradient"
-                icon="flame"
-                data={caloriesData}
-              />
+            <AlertWidget />  
+            
+            <div className="relative z-10">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                Game Suggestions
+              </h1>
+              <p className="text-gray-400 mt-2">Discover the perfect game based on the weather</p>
             </div>
-
-            <AlertWidget />
+            
+            <GameSuggestions weatherData={weatherData} />
           </motion.div>
         </main>
       </div>

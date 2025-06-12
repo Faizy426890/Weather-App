@@ -172,7 +172,7 @@ function Home() {
                     <Button
                       variant="ghost"
                       className="flex items-center justify-start gap-2 hover:text-white hover:bg-gray-800 text-white"
-                      onClick={() => router.push("/dashboard/user-profile")}
+                      onClick={() => router.push("/dashboard")}
                     >
                       <User className="h-4 w-4 text-purple-400" />
                       Dashboard
@@ -252,7 +252,7 @@ function Home() {
                             size="sm"
                             variant="outline"
                             className="text-xs text-black border-gray-700 hover:bg-gray-800 "
-                            onClick={() => router.push("/dashboard/user-profile")}
+                            onClick={() => router.push("/dashboard")}
                           >
                             Dashboard
                           </Button>
@@ -746,7 +746,7 @@ function Home() {
                 <Button
                   size="lg"
                   onClick={() => {
-                    isSignedIn ? router.push("/dashboard/user-profile") : router.push("/sign-in")
+                    isSignedIn ? router.push("/dashboard") : router.push("/sign-in")
                   }}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
