@@ -445,10 +445,10 @@ export default function CoachesPage() {
                   <Card className="bg-gray-800/50 border-gray-700">
                     <CardContent className="p-8 text-center">
                       <p className="text-gray-400">You haven't created any sessions yet.</p>
-                      <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                      {/* <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
                         <Plus className="w-4 h-4 mr-2" />
                         Create Your First Session
-                      </Button>
+                      </Button> */}
                     </CardContent>
                   </Card>
                 )}
