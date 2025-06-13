@@ -81,7 +81,7 @@ export function GameSuggestions({ weatherData }: GameSuggestionsProps) {
         weather: [{ main: weather.weather[0].main }],
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/games-suggestions`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_WEATHER_URL}/api/games-suggestions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

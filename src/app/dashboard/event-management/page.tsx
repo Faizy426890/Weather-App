@@ -792,9 +792,9 @@ export default function EventManagement() {
                     <SelectTrigger className="bg-white/5 border-white/10 text-gray-300">
                       <SelectValue placeholder="Select a sport" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10">
+                    <SelectContent className="bg-slate-900 text-white border-white/10">
                       {sports.map((sport) => (
-                        <SelectItem key={sport} value={sport}>
+                        <SelectItem className="text-white" key={sport} value={sport}>
                           {sport}
                         </SelectItem>
                       ))}
