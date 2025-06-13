@@ -27,7 +27,7 @@ export default function UserProfile() {
     const router = useRouter();
 
  const handleNavigate = () => {
-    router.push('/dashboard/game-suggestions');
+    router.push('/dashboard');
   };
   const [bio, setBio] = useState<string>("")
   const [achievements, setAchievements] = useState<Achievement[]>([])

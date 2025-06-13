@@ -190,13 +190,15 @@ export function GameSuggestions({ weatherData }: GameSuggestionsProps) {
                           {game.players} player{game.players !== 1 ? "s" : ""}
                         </span>
                       </div>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-600"
-                      >
-                        Interested
-                      </motion.button>
+                     <motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  disabled
+  className="w-full py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg transition-all duration-300 hover:from-blue-600 hover:to-purple-600 cursor-not-allowed opacity-70"
+>
+  Suggested
+</motion.button>
+
                     </div>
                   </motion.div>
                 )
