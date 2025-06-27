@@ -837,7 +837,7 @@ function Home() {
                 </div>
               </div>
 
-              <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm overflow-hidden">
+              {/* <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm overflow-hidden">
                 <CardHeader>
                   <CardTitle className="text-white">Send Us a Message</CardTitle>
                   <CardDescription className="text-gray-300">
@@ -895,7 +895,7 @@ function Home() {
                     Send Message
                   </Button>
                 </CardFooter>
-              </Card>
+              </Card> */}
             </div>
           </div>
         </section>
@@ -1030,7 +1030,7 @@ function Home() {
                 </li>
               </ul>
 
-              <h3 className="font-medium text-lg mt-6 mb-4 text-white">Subscribe</h3>
+              {/* <h3 className="font-medium text-lg mt-6 mb-4 text-white">Subscribe</h3>
               <div className="flex">
                 <input
                   type="email"
@@ -1040,7 +1040,7 @@ function Home() {
                 <Button className="rounded-l-none bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                   <SendIcon className="h-4 w-4" />
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
 

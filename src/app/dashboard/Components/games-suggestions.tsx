@@ -28,18 +28,18 @@ interface ApiResponse {
 
 // Default game images mapping
 const gameImages: { [key: string]: string } = {
-  Cricket: "/images/cricket.jpg",
-  Football: "/images/football.jpg",
-  Baseball: "/images/baseball.jpg",
-  Tennis: "/images/tennis.jpg",
-  Badminton: "/images/badmintion.jpg",
-  Photography: "/images/cricket.jpg", // fallback
-  Fishing: "/images/football.jpg", // fallback
-  "Board Games": "/images/baseball.jpg", // fallback
-  "Roller Skating": "/images/tennis.jpg", // fallback
-  "Night Photography": "/images/badmintion.jpg", // fallback
-  "Outdoor Photography": "/images/cricket.jpg", // fallback
-  "Photography Walk": "/images/football.jpg", // fallback
+  Cricket: "/images/games.webp",
+  Football: "/images/games.webp",
+  Baseball: "/images/games.webp",
+  Tennis: "/images/games.webp",
+  Badminton: "/images/games.webp",
+  Photography: "/images/games.webp", // fallback
+  Fishing: "/images/games.webp", // fallback
+  "Board Games": "/images/games.webp", // fallback
+  "Roller Skating": "/images/games.webp", // fallback
+  "Night Photography": "/images/games.webp", // fallback
+  "Outdoor Photography": "/images/games.webp", // fallback
+  "Photography Walk": "/images/games.webp", // fallback
 }
 
 function GameSkeleton() {

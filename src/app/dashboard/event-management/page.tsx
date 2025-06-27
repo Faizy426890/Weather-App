@@ -787,12 +787,7 @@ export default function EventManagement() {
                   </button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <button
-                        className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-300 hover:text-red-200 transition-colors"
-                        title="Delete Tournament"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                 
                     </AlertDialogTrigger>
                     <AlertDialogContent className="bg-slate-900 border-slate-700">
                       <AlertDialogHeader>
