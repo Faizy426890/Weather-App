@@ -3,7 +3,18 @@
 import type React from "react"
 
 import { motion } from "framer-motion"
-import { Calendar, MapPin, Users, Clock, X, Loader2 } from "lucide-react"
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  X,
+  Loader2,
+  CloudRain,
+  Snowflake,
+  Thermometer,
+  AlertTriangle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -83,6 +94,85 @@ interface TournamentForm {
   endDate: string
 }
 
+interface WeatherData {
+  currentData: any
+  forecastData: any
+}
+
+interface WeatherAlert {
+  tournamentId: string
+  tournamentName: string
+  date: string
+  weatherType: "rain" | "snow" | "heat"
+  temperature?: number
+  description: string
+}
+
+// Weather Alert Component
+const WeatherAlertCard = ({ alert, onDismiss }: { alert: WeatherAlert; onDismiss: (id: string) => void }) => {
+  const getWeatherIcon = (type: string) => {
+    switch (type) {
+      case "rain":
+        return <CloudRain className="w-5 h-5 text-blue-400" />
+      case "snow":
+        return <Snowflake className="w-5 h-5 text-blue-200" />
+      case "heat":
+        return <Thermometer className="w-5 h-5 text-red-400" />
+      default:
+        return <AlertTriangle className="w-5 h-5 text-yellow-400" />
+    }
+  }
+
+  const getAlertColor = (type: string) => {
+    switch (type) {
+      case "rain":
+        return "from-blue-500/20 to-blue-600/20 border-blue-500/30"
+      case "snow":
+        return "from-blue-300/20 to-blue-400/20 border-blue-300/30"
+      case "heat":
+        return "from-red-500/20 to-red-600/20 border-red-500/30"
+      default:
+        return "from-yellow-500/20 to-yellow-600/20 border-yellow-500/30"
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+      className={`relative backdrop-blur-xl bg-gradient-to-r ${getAlertColor(alert.weatherType)} 
+        rounded-2xl p-4 border overflow-hidden group`}
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      <div className="relative z-10 flex items-start gap-3">
+        <div className="flex-shrink-0 p-2 bg-white/10 rounded-lg">{getWeatherIcon(alert.weatherType)}</div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h4 className="font-semibold text-white text-sm">{alert.tournamentName}</h4>
+              <p className="text-gray-300 text-xs mt-1">{alert.date}</p>
+            </div>
+            <button
+              onClick={() => onDismiss(alert.tournamentId)}
+              className="flex-shrink-0 p-1 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-400 hover:text-white" />
+            </button>
+          </div>
+
+          <div className="mt-2">
+            <p className="text-white text-sm">{alert.description}</p>
+            {alert.temperature && <p className="text-gray-300 text-xs mt-1">Temperature: {alert.temperature}°C</p>}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 export default function EventManagement() {
   const { user } = useUser()
 
@@ -114,6 +204,161 @@ export default function EventManagement() {
   const [deletingTournament, setDeletingTournament] = useState<string | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
 
+  // Weather related state
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+  const [forecastData, setForecastData] = useState<any>(null)
+  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>([])
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(false)
+  const [locationEnabled, setLocationEnabled] = useState(false)
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+
+  // Weather data fetching function
+  const fetchWeatherData = (lat: any, lon: any) => {
+    const apiKey = "6745c98c8992f382217f7d45c36aba00"
+
+    const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
+
+    Promise.all([
+      fetch(currentWeatherUrl).then((response) => response.json()),
+      fetch(forecastUrl).then((response) => response.json()),
+    ])
+      .then(([currentData, forecastData]) => {
+        const weatherData = { currentData, forecastData }
+        setWeatherData(currentData)
+        setForecastData(forecastData)
+        setLoading(false)
+        setLocationEnabled(true)
+        setLocationPermissionDenied(false)
+
+        // Check weather alerts for tournaments
+        checkWeatherAlerts(forecastData)
+      })
+      .catch((error) => {
+        console.error("Fetch error:", error)
+        setErrorMsg("Failed to fetch weather data.")
+        setLoading(false)
+      })
+  }
+
+  // Function to check weather alerts for tournaments in next 7 days
+  const checkWeatherAlerts = (forecast: any) => {
+    if (!forecast || !forecast.list) return
+
+    const alerts: WeatherAlert[] = []
+    const now = new Date()
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+    // Get all tournaments in the next 7 days
+    const upcomingTournaments = [...tournamentData.createdTournaments, ...tournamentData.invitedTournaments].filter(
+      (tournament) => {
+        const tournamentDate = new Date(tournament.startDate)
+        return tournamentDate >= now && tournamentDate <= sevenDaysFromNow
+      },
+    )
+
+    upcomingTournaments.forEach((tournament) => {
+      const tournamentDate = new Date(tournament.startDate)
+
+      // Find weather forecast for tournament date
+      const forecastForDate = forecast.list.find((item: any) => {
+        const forecastDate = new Date(item.dt * 1000)
+        return forecastDate.toDateString() === tournamentDate.toDateString()
+      })
+
+      if (forecastForDate) {
+        const weather = forecastForDate.weather[0]
+        const temp = forecastForDate.main.temp
+        const weatherMain = weather.main.toLowerCase()
+        const weatherDescription = weather.description
+
+        // Check for bad weather conditions
+        if (weatherMain.includes("rain") || weatherDescription.includes("rain")) {
+          alerts.push({
+            tournamentId: tournament._id,
+            tournamentName: tournament.tournamentName,
+            date: tournamentDate.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }),
+            weatherType: "rain",
+            temperature: Math.round(temp),
+            description: `Rainy weather expected - ${weatherDescription}`,
+          })
+        } else if (weatherMain.includes("snow") || weatherDescription.includes("snow")) {
+          alerts.push({
+            tournamentId: tournament._id,
+            tournamentName: tournament.tournamentName,
+            date: tournamentDate.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }),
+            weatherType: "snow",
+            temperature: Math.round(temp),
+            description: `Snowy weather expected - ${weatherDescription}`,
+          })
+        } else if (temp > 35) {
+          alerts.push({
+            tournamentId: tournament._id,
+            tournamentName: tournament.tournamentName,
+            date: tournamentDate.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }),
+            weatherType: "heat",
+            temperature: Math.round(temp),
+            description: `Excessive heat warning - Very hot conditions expected`,
+          })
+        }
+      }
+    })
+
+    // Filter out dismissed alerts
+    const filteredAlerts = alerts.filter((alert) => !dismissedAlerts.has(alert.tournamentId))
+    setWeatherAlerts(filteredAlerts)
+  }
+
+  // Get user location and fetch weather data
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          fetchWeatherData(latitude, longitude)
+        },
+        (error) => {
+          console.error("Geolocation error:", error)
+          setLocationPermissionDenied(true)
+          setLoading(false)
+        },
+      )
+    } else {
+      setErrorMsg("Geolocation is not supported by this browser.")
+      setLoading(false)
+    }
+  }, [])
+
+  // Re-check weather alerts when tournaments change
+  useEffect(() => {
+    if (
+      forecastData &&
+      (tournamentData.createdTournaments.length > 0 || tournamentData.invitedTournaments.length > 0)
+    ) {
+      checkWeatherAlerts(forecastData)
+    }
+  }, [tournamentData, forecastData, dismissedAlerts])
+
+  // Dismiss weather alert
+  const dismissWeatherAlert = (tournamentId: string) => {
+    setDismissedAlerts((prev) => new Set([...prev, tournamentId]))
+    setWeatherAlerts((prev) => prev.filter((alert) => alert.tournamentId !== tournamentId))
+  }
+
   // Fetch tournaments on mount
   const fetchTournaments = async () => {
     if (!user?.id) return
@@ -135,8 +380,8 @@ export default function EventManagement() {
       setLoadingTournaments(false)
     }
   }
-  useEffect(() => {
 
+  useEffect(() => {
     if (user?.id) {
       fetchTournaments()
     }
@@ -399,7 +644,7 @@ export default function EventManagement() {
         startDate: "",
         endDate: "",
       })
-      setSelectedMembers([]) 
+      setSelectedMembers([])
       fetchTournaments()
       setAvailableFriends([])
       setFriendsLoaded(false)
@@ -510,7 +755,7 @@ export default function EventManagement() {
 
     return (
       <motion.div
-       key={tournament._id || Math.random().toString(36).substr(2, 9)}
+        key={tournament._id || Math.random().toString(36).substr(2, 9)}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.1 }}
@@ -655,11 +900,11 @@ export default function EventManagement() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full mt-6 py-2.5 bg-white/5 hover:bg-white/10 
+            className="w-full mt-6 py-2.5 cursor-default bg-white/5 hover:bg-white/10 
             border border-white/10 rounded-xl text-white font-medium
             transition-colors duration-200"
           >
-            View Details
+            Created
           </motion.button>
         </div>
       </motion.div>
@@ -684,6 +929,21 @@ export default function EventManagement() {
             {user && <p className="text-gray-300 mt-1">Welcome, {user.firstName || user.username}!</p>}
           </div>
         </div>
+
+        {/* Weather Alerts Section */}
+        {weatherAlerts.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              Weather Alerts
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {weatherAlerts.map((alert) => (
+                <WeatherAlertCard key={alert.tournamentId} alert={alert} onDismiss={dismissWeatherAlert} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {loadingTournaments ? (
           <div className="flex items-center justify-center py-12">

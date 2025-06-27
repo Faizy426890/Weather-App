@@ -169,7 +169,7 @@ export default function Dashboard() {
               onLocationToggle={handleLocationToggle}
             />
 
-            <AlertWidget />  
+            {/* <AlertWidget />   */}
             
             <div className="relative z-10">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
